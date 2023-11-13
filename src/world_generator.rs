@@ -97,16 +97,20 @@ impl WorldGenerator {
     }
 
     pub fn visualize(world: Vec<Vec<Tile>>, resolution : usize) {
+        let mut window_resolution = WindowResolution::new(resolution as f32, resolution as f32);
+        window_resolution.set_scale_factor_override(Some(1.0)); // on smaller screens bevy sometimes sets the scale factor
+
         let window_plugin = WindowPlugin {
             primary_window: Some(Window {
                 title: "MIDGARD".into(),
-                resolution: WindowResolution::new(resolution as f32, resolution as f32),
+                resolution: window_resolution,
                 resizable: false,
                 ..default()
             }),
             ..default()
         };
-        
+
+
         App::new()
             .add_plugins((DefaultPlugins.set(window_plugin), PixelsPlugin::default()))
             .add_systems(Update, bevy::window::close_on_esc)
