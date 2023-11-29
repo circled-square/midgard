@@ -2,7 +2,20 @@
 
 ## Steps
 
-- 
+- Generate biomes: 
+  - Desert
+  - Forest
+  - Mountain(s)
+  - Water
+  - Plains
+- Altitude generation (with biome bias)
+- Tiles based on biome and altitude
+    - shallow/deep water under predefined sea level threshold
+    - mountain biome: Hill/Mountain/Snow based on altitude thresholds
+    - desert biome: Sand
+    - 
+
+
 
 
 - Altitude generation
