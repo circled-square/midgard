@@ -8,52 +8,26 @@
   - Mountain(s)
   - Water
   - Plains
-- Altitude generation (with biome bias)
-- Tiles based on biome and altitude
-    - shallow/deep water under predefined sea level threshold
-    - mountain biome: Hill/Mountain/Snow based on altitude thresholds
-    - desert biome: Sand
-    - 
+- Generate altitude (with biome bias)
+- Generate tiles based on biome and altitude
+  - water biome: ShallowWater/DeepWater 
+  - mountain biome: Hill/Mountain/Snow/Lava
+  - desert biome: Sand/Lava
+  - forest biome: Grass
+  - plains biome: Grass
+- Generate road network
+- Generate Teleports
+- Generate Contents, based on biome
+  - water biome: Water, Fish
+  - mountain biome: Rock, Tree
+  - desert biome: Fire
+  - forest biome: Tree
+  - plains biome: Rock
+- Generate random Contents
+  - Garbage, Coin, Bin, Crate, Bank, Market
 
 
+## Notes
 
-
-- Altitude generation
-- Define thresholds for
-  - deep water
-  - shallow water
-  - terrain
-  - Hill
-  - Mountain
-  - Snow
-- Biomes
-- Put tiles in place
-  - Based on biomes
-    - Sand
-  - Random
-    - Teleport
-- Put contents in tiles
-  - Based on biomes
-    - Water
-    - Fish
-    - Fire
-    - Tree
-    - Rock
-  - Random
-    - Garbage
-    - Coin
-    - Bin
-    - Crate
-    - Bank
-    - Market
-
-## Biomes
-
-- Biomes
-  - forest composed of
-    - grass
-    - water
-    - trees
-  - desert composed of
-    - sand
-    - lava
+What noise to use?
+How to do everything?
