@@ -7,4 +7,6 @@ edition = "2021"
 
 [dependencies]
 robotics_lib = { path="../Robotic-Lib" }
-perlin_noise = "*"
+noise = { version = "0.8.2" }
+bevy = { version = "0.12", default_features = false }
+bevy_pixels = "*"
