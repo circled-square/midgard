@@ -2,12 +2,13 @@ mod generator;
 
 extern crate core;
 
+use std::collections::{HashMap, HashSet};
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
 use bevy_pixels::prelude::*;
+use noise::{Constant, Multiply, NoiseFn, Perlin, ScalePoint};
 
 use robotics_lib::world::tile::Tile;
-use robotics_lib::world::tile::TileType;
 use robotics_lib::world::worldgenerator::Generator;
 use generator::WorldGenerator;
 
@@ -52,15 +53,56 @@ fn draw(mut wrapper_query: Query<&mut PixelsWrapper>, world_matrix: Res<WorldMat
     assert_eq!(frame.len(), world_size * world_size * 4);
 
     let to_world_coords = |i| (i%world_size, i/world_size);
-    for i in 0..frame.len()/4 {
-        let (x,y) = to_world_coords(i);
 
+    let scale = 1. / 50.;
+    let scaled_perlin = |seed, scale| -> Multiply<f64, ScalePoint<Perlin>, Constant, 2> {
+        Multiply::new(
+            ScalePoint::new(
+                Perlin::new(seed)
+            ).set_scale(scale),
+            Constant::new(10.)
+        )
+    };
+    let noise_function =
+        noise::Displace::new(
+            noise::ScalePoint::new(
+                noise::Worley::new(2),
+            ).set_scale(scale),
+            scaled_perlin(0, scale * 2.),
+            scaled_perlin(1, scale * 2.),
+            // noise::Constant::new(0.), noise::Constant::new(0.),
+            noise::Constant::new(0.), noise::Constant::new(0.),
+        );
+
+    for i in 0..frame.len()/4 {
+        let (x, y) = to_world_coords(i);
+        let noise = noise_function.get([x as f64, y as f64]);
+
+        let color : [u8; 3]= match noise {
+            n if n < -0.75 => [0, 0, 128],// sea
+            n if n < -0.35 => [128, 128, 0], // desert
+            n if n < 0.55 => [0, 128, 0], // plains
+            n if n < 0.8 => [0, 64, 0], // forest
+            _ => [64, 64, 64], // mountain
+        };
+        /*
+        let color = (noise*127.+127.) as u8;
+        let color = [color, color, color];
+        */
+        /*
         let color = match (*world_matrix).world_matrix[x][y] {
-            Tile{ tile_type: TileType::Grass, ..} => { [0, 128, 0] }
             Tile{ tile_type: TileType::ShallowWater, ..} => { [0, 0, 128] }
+            Tile{ tile_type: TileType::DeepWater, ..} => { [0, 0, 64] }
+            Tile{ tile_type: TileType::Grass, ..} => { [0, 128, 0] }
+            Tile{ tile_type: TileType::Sand, ..} => { [128, 128, 0] }
+            Tile{ tile_type: TileType::Hill, ..} => { [92, 92, 0] }
+            Tile{ tile_type: TileType::Mountain, ..} => { [64, 64, 64] }
+            Tile{ tile_type: TileType::Snow, ..} => { [164, 164, 164] }
             _ => todo!(),
         };
+         */
         frame[i*4..i*4+3].copy_from_slice(&color);
+
         frame[i*4 + 3] = 0xff; // alpha channel
     }
 }
