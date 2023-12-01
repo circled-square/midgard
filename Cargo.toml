@@ -6,4 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-robotics_lib = { path="Robotic-Lib" }
+robotics_lib = { path="src/Robotic-Lib" }
