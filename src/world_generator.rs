@@ -1,8 +1,8 @@
 use bevy::{prelude::*, window::WindowResolution};
 use bevy_pixels::prelude::*;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
-use noise::{NoiseFn, Perlin, Worley};
-use noise::core::worley::ReturnType;
+use noise::{Add, Blend, Fbm, NoiseFn, Perlin, RidgedMulti, Worley};
+use noise::core::worley;
 
 pub struct WorldGenerator {
     seed: u32,
@@ -52,35 +52,46 @@ impl WorldGenerator {
         let snow_tile = Tile { tile_type: TileType::Snow, content: Content::None, elevation: 0};
 
         let mut world = vec![vec![deep_water_tile.clone(); self.world_size]; self.world_size];
-        let mut biome_map: Vec<Vec<f64>> = vec![vec![0.0; self.world_size]; self.world_size];
+        let mut temperature_map: Vec<Vec<f64>> = vec![vec![0.0; self.world_size]; self.world_size];
 
-        //by default i creates a Voronoi diagram
-        //worley.set_return_type(ReturnType::Value);
-        //so this is not needed
-        let worley = Worley::new(self.seed);
+        let perlin = Perlin::new(self.seed + 42);
         for x in 0..self.world_size {
             for y in 0..self.world_size {
                 let scale = 1.0/50.0;
-                biome_map[x][y] = worley.get([x as f64 * scale, y as f64 * scale]);
+                temperature_map[x][y] = (
+                    1.00 * perlin.get( [scale * 1.0 * x as f64, scale *  1.0 * y as f64])
+                    + 0.75 * perlin.get( [scale * 2.0 * x as f64, scale *  2.0 * y as f64])
+                    + 0.33 * perlin.get( [scale * 4.0 * x as f64, scale *  4.0 * y as f64])
+                    + 0.33 * perlin.get( [scale * 8.0 * x as f64, scale *  8.0 * y as f64])
+                    + 0.33 * perlin.get([scale * 16.0 * x as f64, scale * 16.0 * y as f64])
+                    + 0.50 * perlin.get([scale * 32.0 * x as f64, scale * 32.0 * y as f64])
+                ) / (1.00 + 0.75 + 0.33 + 0.33 + 0.33 + 0.50);
+                //println!("{}", temperature_map[x][y]);
             }
         }
 
-        let closure_annotated = |x: usize, y: usize| -> Tile {
-            if biome_map[x][y] < 0.5 {
+        let get_biome = |x: usize, y: usize| -> Tile {
+            println!("{}", temperature_map[x][y]);
 
+            match temperature_map[x][y] {
+                //plains
+                v if v > -0.5 && v <= 0.0 => grass_tile.clone(),
+                //desert
+                v if v >  0.0 && v < 0.5 => sand_tile.clone(),
+                //forest
+                _ => lava_tile.clone()
             }
-
-            todo!()
         };
 
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                world[x][y] = match biome_map[x][y] {
+                world[x][y] = match elevation_map[x][y] {
                     h if h < -0.75 => deep_water_tile.clone(),
                     h if h < -0.50 => shallow_water_tile.clone(),
-                    h if h <  0.50 => grass_tile.clone(),
+                    h if h <  0.50 => get_biome(x, y),
+                    h if h <  0.65 => hill_tile.clone(),
                     h if h <  0.75 => mountain_tile.clone(),
-                    h if h <  1.00 => snow_tile.clone(),
+                    h if h <= 1.00 => snow_tile.clone(),
                     _ => deep_water_tile.clone()
                 };
             }
@@ -98,6 +109,8 @@ impl WorldGenerator {
             TileType::DeepWater => [0, 0, 127, 255],
             TileType::ShallowWater => [0, 0, 255, 255],
             TileType::Grass => [0, 255, 0, 255],
+            TileType::Sand => [255, 255, 0, 255],
+            TileType::Lava => [255, 0, 0, 255],
             TileType::Hill => [0, 127, 0, 255],
             TileType::Mountain => [153, 102, 51, 255],
             TileType::Snow => [255, 255, 255, 255],
