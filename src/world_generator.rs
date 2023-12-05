@@ -1,7 +1,7 @@
 use bevy::{prelude::*, window::WindowResolution};
 use bevy_pixels::prelude::*;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
-use noise::{NoiseFn, Perlin};
+use noise::{Abs, Add, Billow, Blend, Constant, Curve, Multiply, Negate, NoiseFn, Perlin, ScalePoint, Seedable, Turbulence};
 
 pub struct WorldGenerator {
     seed: u32,
@@ -27,16 +27,61 @@ impl WorldGenerator {
     }
 
     fn generate_altitude(&self) -> Vec<Vec<f64>> {
-        let perlin = Perlin::new(self.seed);
+        let mountain_perlin = |seed| {
+            Turbulence::<Perlin, Perlin>::new(
+                Perlin::new(seed),
+            )
+                .set_power(0.5)
+                .set_frequency(0.4)
+                .set_roughness(10)
+                .set_seed(seed + 1)
+        };
+        let noise_function =
+            ScalePoint::new(
+                Blend::new(
+                    Perlin::new(self.seed),
+                    mountain_perlin(self.seed),
+                    Multiply::new(
+                        Perlin::new(self.seed),
+                        Constant::new(1.5)
+                    )
+                )
+            ).set_scale(1.0/30.0);
+            /*noise::Clamp::new(
+            Add::new(
+                ScalePoint::new(Perlin::new(self.seed)).set_scale(1.0/50.0),
+                Add::new(
+                    Multiply::new(
+                        ScalePoint::new(
+                            Billow::<Perlin>::new(self.seed)
+                        ).set_scale(1.0/50.0),
+                            Constant::new(2.2 / 3.64)
+                    ),
+                    Constant::new(0.2)
+                ),
+                Multiply::new(
+                    ScalePoint::new(
+                        Perlin::new(self.seed+10)
+                    ).set_scale(1.0/200.0),
+                    Constant::new(0.4)
+                )
+            )
+            ).set_bounds(-1.0, 1.0);*/
         let mut elevation_map = vec![vec![0.0; self.world_size]; self.world_size];
-        
+
+        // let mut min = 10000.;
+        // let mut max = -10000.;
+
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                let scale = 1.0/50.0;
-                elevation_map[x][y] = perlin.get([x as f64 * scale, y as f64 * scale]);
+                let noise = noise_function.get([x as f64, y as f64]);
+                elevation_map[x][y] = noise;
+                // if noise > max { max = noise; }
+                // if noise < min { min = noise; }
             }
         }
 
+        // println!("max {max} min {min}");
         return elevation_map;
     }
 
@@ -53,11 +98,11 @@ impl WorldGenerator {
         for x in 0..self.world_size {
             for y in 0..self.world_size {
                 world[x][y] = match elevation_map[x][y] {
-                    h if h < -0.75 => deep_water_tile.clone(),
-                    h if h < -0.50 => shallow_water_tile.clone(),
-                    h if h <  0.25 => grass_tile.clone(),
-                    h if h <  0.50 => hill_tile.clone(),
-                    h if h <  0.75 => mountain_tile.clone(),
+                    h if h < -0.85 => deep_water_tile.clone(),
+                    h if h < -0.65 => shallow_water_tile.clone(),
+                    h if h < -0.10 => grass_tile.clone(),
+                    h if h <  0.35 => hill_tile.clone(),
+                    h if h <  0.65 => mountain_tile.clone(),
                     _ => snow_tile.clone(),
                 };
             }
