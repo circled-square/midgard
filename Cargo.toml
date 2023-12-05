@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-robotics_lib = { path="../Robotic-Lib" }
-noise = { version = "0.8.2" }
+robotics_lib = { path="src/Robotic-Lib" }
 bevy = { version = "0.12", default_features = false }
-bevy_pixels = "*"
+bevy_pixels = "0.12"
+noise = "0.8.2"
