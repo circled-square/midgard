@@ -1,7 +1,8 @@
 use bevy::{prelude::*, window::WindowResolution};
 use bevy_pixels::prelude::*;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
-use noise::{NoiseFn, Perlin};
+use noise::{NoiseFn, Perlin, Worley};
+use noise::core::worley::ReturnType;
 
 pub struct WorldGenerator {
     seed: u32,
@@ -44,21 +45,43 @@ impl WorldGenerator {
         let deep_water_tile = Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0};
         let shallow_water_tile = Tile { tile_type: TileType::ShallowWater, content: Content::None, elevation: 0};
         let grass_tile = Tile { tile_type: TileType::Grass, content: Content::None, elevation: 0};
+        let sand_tile = Tile { tile_type: TileType::Sand, content: Content::None, elevation: 0};
+        let lava_tile = Tile { tile_type: TileType::Lava, content: Content::None, elevation: 0};
         let hill_tile = Tile { tile_type: TileType::Hill, content: Content::None, elevation: 0};
         let mountain_tile = Tile { tile_type: TileType::Mountain, content: Content::None, elevation: 0};
         let snow_tile = Tile { tile_type: TileType::Snow, content: Content::None, elevation: 0};
 
         let mut world = vec![vec![deep_water_tile.clone(); self.world_size]; self.world_size];
+        let mut biome_map: Vec<Vec<f64>> = vec![vec![0.0; self.world_size]; self.world_size];
+
+        //by default i creates a Voronoi diagram
+        //worley.set_return_type(ReturnType::Value);
+        //so this is not needed
+        let worley = Worley::new(self.seed);
+        for x in 0..self.world_size {
+            for y in 0..self.world_size {
+                let scale = 1.0/50.0;
+                biome_map[x][y] = worley.get([x as f64 * scale, y as f64 * scale]);
+            }
+        }
+
+        let closure_annotated = |x: usize, y: usize| -> Tile {
+            if biome_map[x][y] < 0.5 {
+
+            }
+
+            todo!()
+        };
 
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                world[x][y] = match elevation_map[x][y] {
+                world[x][y] = match biome_map[x][y] {
                     h if h < -0.75 => deep_water_tile.clone(),
                     h if h < -0.50 => shallow_water_tile.clone(),
-                    h if h <  0.25 => grass_tile.clone(),
-                    h if h <  0.50 => hill_tile.clone(),
+                    h if h <  0.50 => grass_tile.clone(),
                     h if h <  0.75 => mountain_tile.clone(),
-                    _ => snow_tile.clone(),
+                    h if h <  1.00 => snow_tile.clone(),
+                    _ => deep_water_tile.clone()
                 };
             }
         }
