@@ -1,7 +1,7 @@
 use bevy::{prelude::*, window::WindowResolution};
 use bevy_pixels::prelude::*;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
-use noise::{Add, Blend, Fbm, NoiseFn, Perlin, RidgedMulti, Worley};
+use noise::{Add, BasicMulti, Blend, Fbm, NoiseFn, Perlin, RidgedMulti, Worley};
 use noise::core::worley;
 
 pub struct WorldGenerator {
@@ -33,7 +33,7 @@ impl WorldGenerator {
         
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                let scale = 1.0/50.0;
+                let scale = 1.0/35.0;
                 elevation_map[x][y] = perlin.get([x as f64 * scale, y as f64 * scale]);
             }
         }
@@ -54,24 +54,26 @@ impl WorldGenerator {
         let mut world = vec![vec![deep_water_tile.clone(); self.world_size]; self.world_size];
         let mut temperature_map: Vec<Vec<f64>> = vec![vec![0.0; self.world_size]; self.world_size];
 
+        let scaling = 1.0/35.0;
         let perlin = Perlin::new(self.seed + 42);
+        let amplitudes = [1.0, 1.0/2.0, 1.0/4.0, 1.0/8.0, 1.0/16.0, 1.0/32.0];
+        let frequencies = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0].map(|x| x * scaling);
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                let scale = 1.0/50.0;
-                temperature_map[x][y] = (
-                    1.00 * perlin.get( [scale * 1.0 * x as f64, scale *  1.0 * y as f64])
-                    + 0.75 * perlin.get( [scale * 2.0 * x as f64, scale *  2.0 * y as f64])
-                    + 0.33 * perlin.get( [scale * 4.0 * x as f64, scale *  4.0 * y as f64])
-                    + 0.33 * perlin.get( [scale * 8.0 * x as f64, scale *  8.0 * y as f64])
-                    + 0.33 * perlin.get([scale * 16.0 * x as f64, scale * 16.0 * y as f64])
-                    + 0.50 * perlin.get([scale * 32.0 * x as f64, scale * 32.0 * y as f64])
-                ) / (1.00 + 0.75 + 0.33 + 0.33 + 0.33 + 0.50);
-                //println!("{}", temperature_map[x][y]);
+                temperature_map[x][y] =
+                    (
+                        amplitudes[0] * perlin.get([frequencies[0] * x as f64, frequencies[0] * y as f64])
+                        + amplitudes[1] * perlin.get([frequencies[1] * x as f64, frequencies[1] * y as f64])
+                        + amplitudes[2] * perlin.get([frequencies[2] * x as f64, frequencies[2] * y as f64])
+                        + amplitudes[3] * perlin.get([frequencies[3] * x as f64, frequencies[3] * y as f64])
+                        + amplitudes[4] * perlin.get([frequencies[4] * x as f64, frequencies[4] * y as f64])
+                        + amplitudes[5] * perlin.get([frequencies[5] * x as f64, frequencies[5] * y as f64])
+                    ) / amplitudes.iter().sum::<f64>()
             }
         }
 
         let get_biome = |x: usize, y: usize| -> Tile {
-            println!("{}", temperature_map[x][y]);
+            //println!("{}", temperature_map[x][y]);
 
             match temperature_map[x][y] {
                 //plains
