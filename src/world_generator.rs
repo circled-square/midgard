@@ -2,7 +2,7 @@ mod multi_octave_noise;
 mod isize_index_matrix;
 mod performance_telemetry;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::time::SystemTime;
 use noise::*;
 use multi_octave_noise::Multi;
@@ -350,7 +350,7 @@ impl WorldGenerator {
 }
 
 impl Generator for WorldGenerator {
-    fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {
+    fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32, Option<HashMap<Content, f32>>) {
         let mut telemetry = PerformanceTelemetry::new(SystemTime::now());
 
         println!("World seed: {}", self.seed);
@@ -387,6 +387,6 @@ impl Generator for WorldGenerator {
 
         telemetry.print_total_elapsed_time_in_ms("Total generation time");
 
-        (world, spawnpoint, weather, score)
+        (world, spawnpoint, weather, score, None)
     }
 }
