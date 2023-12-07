@@ -1,11 +1,11 @@
 use std::time::SystemTime;
 
-pub struct PerformanceTelemetry {
+pub struct PerformanceProfiler {
     start_time: SystemTime,
     last_time: SystemTime,
 }
 
-impl PerformanceTelemetry {
+impl PerformanceProfiler {
     pub fn new(start_time: SystemTime) -> Self {
         Self { start_time, last_time: start_time }
     }
@@ -25,10 +25,10 @@ impl PerformanceTelemetry {
     }
 
     pub fn print_elapsed_time_in_ms(&mut self, text: &str) {
-        println!("Telemetry: {text} {} ms", self.get_elapsed_time_in_ms(self.last_time));
+        println!("Profiler: {text} {} ms", self.get_elapsed_time_in_ms(self.last_time));
     }
 
     pub fn print_total_elapsed_time_in_ms(&mut self, text: &str) {
-                println!("Telemetry: {text} {} ms", self.get_elapsed_time_in_ms(self.start_time));
+                println!("Profiler: {text} {} ms", self.get_elapsed_time_in_ms(self.start_time));
     }
 }
