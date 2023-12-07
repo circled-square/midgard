@@ -72,6 +72,7 @@ impl WorldGenerator {
 
     fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, rivers_amount : f64) {
         let number_of_rivers = (world.len() as f64 * world.len() as f64 * rivers_amount / 1000.0) as usize;
+        let inertia_factor = 0.005;
 
         let rng_seed = {
             let mut rng_seed = [0u8;32];
@@ -83,6 +84,7 @@ impl WorldGenerator {
 
         let world_pos_distribution = rand::distributions::Uniform::new(0, world.len() as isize);
         let float_distribution = rand::distributions::Uniform::new(0.0, 1.0);
+        let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
         for _ in 0..number_of_rivers {
             let river_tiles = loop {
@@ -100,35 +102,36 @@ impl WorldGenerator {
                 let mut river_tiles_set = HashSet::new();
                 let mut river_inertia = (0.0, 0.0);
 
+
                 loop {
                     if river_tiles_stack.is_empty() {
                         println!("no valid paths from {start_coords:?}");
                         break;
                     }
                     let coords = *river_tiles_stack.last().unwrap();
-                    if !(1..world.len() as isize - 1).contains(&coords.0) || !(1..world.len() as isize -1).contains(&coords.1) {
-                        if rng.sample(float_distribution) < 0.7 {
-                            println!("ran off map at {coords:?}");
-                            break;
+                    if [0, world.len() as isize-1].contains(&coords.0) || [0, world.len() as isize-1].contains(&coords.1) {
+                        match rng.sample(float_distribution) {
+                            n if n < 0.6 => {
+                                river_tiles_stack.clear();
+                                break;
+                            }
+                            n if n < 0.7 => {
+                                println!("ran off map at {coords:?}");
+                                break;
+                            }
+                            n if n < 0.9 => {
+                                river_tiles_stack.pop().unwrap();
+                                continue;
+                            }
+                            _ => {}
                         }
                     }
 
-                            if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
+                    if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
                         println!("reached water at {coords:?}");
                         break;
                     }
-                    if !(0..world.len() as isize).contains(&coords.0) || !(0..world.len() as isize).contains(&coords.1) {
-                        if rng.sample(float_distribution) < 0.65 {
-                            if rng.sample(float_distribution) < 0.75 {
-                                println!("off the edge of the world at {coords:?}");
-                            } else {
-                                river_tiles_stack.clear();
-                            }
-                            break;
-                        }
-                    }
 
-                    let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)];
                     let candidates: Vec<_> =
                         directions.iter()
                             .filter_map(|(x, y)| {
@@ -164,8 +167,6 @@ impl WorldGenerator {
                         let c = candidates[i];
                         let m = candidates[min_index];
 
-                        let inertia_factor = 0.004;
-
                         let direction_c = ((c.0 - coords.0) as f64, (c.1 - coords.1) as f64);
                         let inertia_c = (direction_c.0*river_inertia.0 + direction_c.1*river_inertia.1) * inertia_factor;
 
@@ -192,7 +193,13 @@ impl WorldGenerator {
                 }
             };
 
+            // for each river tile fill it and its neighbors with shallow water
             for coords in river_tiles {
+                for (x,y) in directions.iter() {
+                    if let Some(tile) = world.at_mut_checked((coords.0 + x, coords.1 + y)) {
+                        tile.tile_type = TileType::ShallowWater;
+                    }
+                }
                 world.at_mut(coords).tile_type = TileType::ShallowWater;
             }
         }
@@ -203,10 +210,10 @@ impl WorldGenerator {
 }
 
 impl Generator for WorldGenerator {
-    fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {    
+    fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {
         let altitude_map = self.generate_altitude(5);
         let mut world = self.generate_biomes(&altitude_map);
-        self.generate_rivers(&mut world, &self.generate_altitude(7), 0.03);
+        self.generate_rivers(&mut world, &self.generate_altitude(7), 0.06);
 
         let weather = self.generate_weather();
         let spawnpoint = self.generate_spawnpoint();
