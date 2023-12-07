@@ -14,7 +14,6 @@ pub struct WorldGenerator {
     world_size: usize,
 }
 
-<<<<<<<<< Temporary merge branch 1
 #[derive(Clone, PartialEq)]
 enum Biomes {
     Deepwater,
@@ -28,8 +27,6 @@ enum Biomes {
     SnowyMountain
 }
 
-=========
->>>>>>>>> Temporary merge branch 2
 impl WorldGenerator {
     pub fn new(seed: u32, world_size: usize) -> Self {
         Self { seed, world_size }
