@@ -94,6 +94,26 @@ impl WorldGenerator {
         }
     }
 
+    fn generate_fire_zones(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &Vec<Vec<Biomes>>) {
+        let mut fire_zones_map = vec![vec![0.0; self.world_size]; self.world_size];
+
+        let noise_function = Multiply::new(Constant::new(1.5), Multi::new(Perlin::new(self.seed + 777), 7, 1.0 / 30.0));
+
+        for x in 0..self.world_size {
+            for y in 0..self.world_size {
+                fire_zones_map[x][y] = noise_function.get([x as f64, y as f64]);
+            }
+        }
+
+        for x in 0..self.world_size {
+            for y in 0..self.world_size {
+                if biomes_map[x][y] == Biomes::Desert && world[x][y].tile_type != TileType::Lava && fire_zones_map[x][y] < -0.5 {
+                    world[x][y].content = Content::Fire;
+                }
+            }
+        }
+    }
+
     fn generate_trees(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &Vec<Vec<Biomes>>, ) {
         //forest
         Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 2.5).generate().iter()
@@ -187,8 +207,7 @@ impl WorldGenerator {
         }
     }
 
-    fn generate_biomes(&self, elevation_map: &Vec<Vec<f64>>) -> Vec<Vec<Tile>> {
-        let mut world = vec![vec![Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 }; self.world_size]; self.world_size];
+    fn generate_biomes(&self, world: &mut Vec<Vec<Tile>>, elevation_map: &Vec<Vec<f64>>) -> Vec<Vec<Biomes>> {
         let mut biomes_map: Vec<Vec<Biomes>> = vec![vec![Biomes::Deepwater; self.world_size]; self.world_size];
         let temperature_map = self.generate_temperature_map();
 
@@ -222,12 +241,7 @@ impl WorldGenerator {
             }
         }
 
-        self.generate_lava_lakes(&mut world, &biomes_map);
-        self.generate_trees(&mut world, &biomes_map);
-        self.generate_rocks(&mut world, &biomes_map);
-        self.generate_fishes(&mut world, &biomes_map);
-
-        return world;
+        return biomes_map;
     }
 
     fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation: &Vec<Vec<f64>>, rivers_amount: f64) {
@@ -363,9 +377,16 @@ impl WorldGenerator {
 }
 
 impl Generator for WorldGenerator {
-    fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {    
+    fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {
+        let mut world = vec![vec![Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 }; self.world_size]; self.world_size];
+
         let altitude_map = self.generate_altitude(5);
-        let mut world = self.generate_biomes(&altitude_map);
+        let biomes_map = self.generate_biomes(&mut world, &altitude_map);
+        self.generate_lava_lakes(&mut world, &biomes_map);
+        self.generate_trees(&mut world, &biomes_map);
+        self.generate_rocks(&mut world, &biomes_map);
+        self.generate_fishes(&mut world, &biomes_map);
+        self.generate_fire_zones(&mut world, &biomes_map);
         self.generate_rivers(&mut world, &self.generate_altitude(7), 0.03);
 
         let weather = self.generate_weather();
