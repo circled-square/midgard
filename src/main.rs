@@ -7,7 +7,7 @@ use world_visualizer::WorldVisualizer;
 
 
 fn main() {
-    let mut world_generator = WorldGenerator::new(3, 100);
+    let mut world_generator = WorldGenerator::new(4, 200);
     let (world, (_spawn_x, _spawn_y), _weather, _max_score) = world_generator.gen();
-    WorldVisualizer::visualize(world, 900);
+    WorldVisualizer::visualize(world, 800, 4);
 }
