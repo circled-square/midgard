@@ -6,6 +6,8 @@ use noise::*;
 use multi_octave_noise::Multi;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
 use fast_poisson::Poisson2D;
+use rand::{Rng, SeedableRng};
+use crate::world_generator::isize_index_matrix::IsizeIndexMatrix;
 
 pub struct WorldGenerator {
     seed: u32,
@@ -124,7 +126,7 @@ impl WorldGenerator {
         }
     }
 
-    fn generate_biomes(&self, elevation_map: Vec<Vec<f64>>) -> Vec<Vec<Tile>> {
+    fn generate_biomes(&self, elevation_map: &Vec<Vec<f64>>) -> Vec<Vec<Tile>> {
         let mut world = vec![vec![Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 }; self.world_size]; self.world_size];
         let mut biomes_map: Vec<Vec<Biomes>> = vec![vec![Biomes::Deepwater; self.world_size]; self.world_size];
         let temperature_map = self.generate_temperature_map();
