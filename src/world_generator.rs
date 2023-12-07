@@ -2,8 +2,6 @@ mod multi_octave_noise;
 mod isize_index_matrix;
 
 use std::collections::HashSet;
-use bevy::{prelude::*, window::WindowResolution};
-use bevy_pixels::prelude::*;
 use noise::*;
 use multi_octave_noise::Multi;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
@@ -16,10 +14,6 @@ pub struct WorldGenerator {
     world_size: usize,
 }
 
-#[derive(Resource)]
-struct WorldMatrixResource {
-    matrix: Vec<Vec<Tile>>
-}
 impl WorldGenerator {
     pub fn new(seed: u32, world_size: usize) -> Self {
         Self { seed, world_size }
@@ -135,7 +129,7 @@ impl WorldGenerator {
                     }
 
                     let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)];
-                    let mut candidates: Vec<_> =
+                    let candidates: Vec<_> =
                         directions.iter()
                             .filter_map(|(x, y)| {
                                 let c = (coords.0 + x, coords.1 + y);
@@ -203,59 +197,8 @@ impl WorldGenerator {
             }
         }
     }
-
     fn generate_spawnpoint(&self) -> (usize, usize) {
         (0, 0)
-    }
-
-    fn color_tile(tile: &Tile) -> [u8; 4] {
-        return match tile.tile_type {
-            TileType::DeepWater => [0, 0, 127, 255],
-            TileType::ShallowWater => [0, 0, 255, 255],
-            TileType::Grass => [0, 255, 0, 255],
-            TileType::Hill => [0, 127, 0, 255],
-            TileType::Mountain => [153, 102, 51, 255],
-            TileType::Snow => [255, 255, 255, 255],
-            TileType::Sand => [192, 192, 0, 255],
-            _ => [0, 0, 0, 255]
-        }
-    }
-
-    fn draw_window(mut wrapper_query: Query<&mut PixelsWrapper>, world: Res<WorldMatrixResource>) {
-        //Bevy pixels stuff
-        let Ok(mut wrapper) = wrapper_query.get_single_mut() else { return };
-        wrapper.pixels.resize_buffer(world.matrix.len() as u32, world.matrix.len() as u32).unwrap();
-        let frame = wrapper.pixels.frame_mut();
-
-        assert_eq!(world.matrix.len() * world.matrix.len() * 4, frame.len());
-
-        for i in 0..(frame.len() / 4) {
-            let color = Self::color_tile(&world.matrix[i % world.matrix.len()][i / world.matrix.len()]);
-            frame[i*4..i*4+4].copy_from_slice(&color);
-        }
-    }
-
-    pub fn visualize(world: Vec<Vec<Tile>>, resolution : usize) {
-        let mut resolution = WindowResolution::new(resolution as f32, resolution as f32);
-        resolution.set_scale_factor_override(Some(1.0));
-
-        let window_plugin = WindowPlugin {
-            primary_window: Some(Window {
-                title: "MIDGARD".into(),
-                resolution,
-                resizable: false,
-                ..default()
-            }),
-            ..default()
-        };
-
-
-        App::new()
-            .add_plugins((DefaultPlugins.set(window_plugin), PixelsPlugin::default()))
-            .add_systems(Update, bevy::window::close_on_esc)
-            .add_systems(Draw, Self::draw_window)
-            .insert_resource(WorldMatrixResource{ matrix: world })
-            .run();
     }
 }
 
@@ -263,7 +206,7 @@ impl Generator for WorldGenerator {
     fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {    
         let altitude_map = self.generate_altitude(5);
         let mut world = self.generate_biomes(&altitude_map);
-        self.generate_rivers(&mut world, &self.generate_altitude(7), 0.1);
+        self.generate_rivers(&mut world, &self.generate_altitude(7), 0.03);
 
         let weather = self.generate_weather();
         let spawnpoint = self.generate_spawnpoint();
