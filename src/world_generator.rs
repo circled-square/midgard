@@ -1,13 +1,16 @@
 mod multi_octave_noise;
 mod isize_index_matrix;
+mod performance_telemetry;
 
 use std::collections::HashSet;
+use std::time::SystemTime;
 use noise::*;
 use multi_octave_noise::Multi;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
 use fast_poisson::Poisson2D;
 use rand::{Rng, SeedableRng};
 use isize_index_matrix::*;
+use crate::world_generator::performance_telemetry::PerformanceTelemetry;
 
 pub struct WorldGenerator {
     seed: u32,
@@ -348,21 +351,41 @@ impl WorldGenerator {
 
 impl Generator for WorldGenerator {
     fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32) {
+        let mut telemetry = PerformanceTelemetry::new(SystemTime::now());
+
         println!("World seed: {}", self.seed);
 
         let mut world = vec![vec![Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 }; self.world_size]; self.world_size];
+        telemetry.print_elapsed_time_in_ms("water world generation time");
 
         let altitude_map = self.generate_altitude(5);
+        telemetry.print_elapsed_time_in_ms("altitude generation time");
+
         let biomes_map = self.generate_biomes(&mut world, &altitude_map);
+        telemetry.print_elapsed_time_in_ms("biomes generation time");
+
         self.generate_rivers(&mut world, &self.generate_altitude(7), 30.0);
+        telemetry.print_elapsed_time_in_ms("rivers generation time");
+
         self.generate_hellfire(&mut world, &biomes_map);
+        telemetry.print_elapsed_time_in_ms("hellfire generation time");
+
         self.generate_trees(&mut world, &biomes_map);
+        telemetry.print_elapsed_time_in_ms("trees generation time");
+
         self.generate_rocks(&mut world, &biomes_map);
+        telemetry.print_elapsed_time_in_ms("rocks generation time");
+
         self.generate_fishes(&mut world, &biomes_map);
+        telemetry.print_elapsed_time_in_ms("fishes generation time");
 
         let weather = self.generate_weather();
+        //telemetry.print_elapsed_time_in_ms("weather generation time");
         let spawnpoint = self.generate_spawnpoint();
+        //telemetry.print_elapsed_time_in_ms("spawnpoint generation time");
         let score = 100.0;
+
+        telemetry.print_total_elapsed_time_in_ms("Total generation time");
 
         (world, spawnpoint, weather, score)
     }
