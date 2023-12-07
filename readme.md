@@ -28,7 +28,10 @@
   - Not on: DeepWater, ShallowWater
 
 
-## Notes
+## TO-DO
 
-What noise to use?
-How to do everything?
+- Fill water as content
+- Generate roads
+- Generate random Contents
+  - Garbage, Coin, Bin, Crate, Bank, Market
+  - Not on: DeepWater, ShallowWater
