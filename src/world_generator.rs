@@ -228,7 +228,7 @@ impl WorldGenerator {
     }
 
     fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, rivers_amount : f64) {
-        let number_of_rivers = (world.len() as f64 * world.len() as f64 * rivers_amount / 1000.0) as usize;
+        let number_of_rivers = (world.len() as f64 * world.len() as f64 * rivers_amount / 1000000.0) as usize;
         let inertia_factor = 0.005;
 
         let rng_seed = {
@@ -245,12 +245,25 @@ impl WorldGenerator {
 
         for _ in 0..number_of_rivers {
             let river_tiles = loop {
+
+                let mut number_of_loops_looking_for_start_coord = 0; //safeguard against infinite looping while looking for a valid random start coordinates in worlds that lack it
                 let start_coords = loop {
                     let coords = (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution));
 
-                    if *elevation.at(coords) > 0.35 && world.at(coords).tile_type != TileType::ShallowWater {
+                    if *elevation.at(coords) > 0.35 {
                         break coords;
                     }
+
+                    if number_of_loops_looking_for_start_coord > self.world_size * self.world_size * 2 {
+                        if *elevation.at(coords) > 0.15 {
+                            break coords;
+                        }
+
+                        if number_of_loops_looking_for_start_coord > self.world_size * self.world_size * 10 {
+                            return;
+                        }
+                    }
+                    number_of_loops_looking_for_start_coord += 1;
                 };
 
                 let mut river_tiles_stack = vec![start_coords];
@@ -261,21 +274,22 @@ impl WorldGenerator {
 
                 loop {
                     if river_tiles_stack.is_empty() {
-                        println!("no valid paths from {start_coords:?}");
                         break;
                     }
                     let coords = *river_tiles_stack.last().unwrap();
                     if [0, world.len() as isize-1].contains(&coords.0) || [0, world.len() as isize-1].contains(&coords.1) {
                         match rng.sample(float_distribution) {
                             n if n < 0.6 => {
+                                //discard this river
                                 river_tiles_stack.clear();
                                 break;
                             }
                             n if n < 0.7 => {
-                                println!("ran off map at {coords:?}");
+                                //flow off the edge of the world
                                 break;
                             }
                             n if n < 0.9 => {
+                                //backtrack to the previous tile
                                 river_tiles_stack.pop().unwrap();
                                 continue;
                             }
@@ -284,7 +298,6 @@ impl WorldGenerator {
                     }
 
                     if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
-                        println!("reached water at {coords:?}");
                         break;
                     }
 
