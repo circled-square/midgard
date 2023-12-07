@@ -10,4 +10,5 @@ robotics_lib = { path="src/Robotic-Lib" }
 bevy = { version = "0.12", default_features = false }
 bevy_pixels = "0.12"
 noise = "0.8.2"
-rand = "*"
+rand = "0.8.5"
+fast_poisson = "1.0.0"
