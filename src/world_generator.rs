@@ -7,13 +7,14 @@ use multi_octave_noise::Multi;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
 use fast_poisson::Poisson2D;
 use rand::{Rng, SeedableRng};
-use crate::world_generator::isize_index_matrix::IsizeIndexMatrix;
+use isize_index_matrix::*;
 
 pub struct WorldGenerator {
     seed: u32,
     world_size: usize,
 }
 
+<<<<<<<<< Temporary merge branch 1
 #[derive(Clone, PartialEq)]
 enum Biomes {
     Deepwater,
@@ -27,6 +28,8 @@ enum Biomes {
     SnowyMountain
 }
 
+=========
+>>>>>>>>> Temporary merge branch 2
 impl WorldGenerator {
     pub fn new(seed: u32, world_size: usize) -> Self {
         Self { seed, world_size }
@@ -41,7 +44,7 @@ impl WorldGenerator {
     }
 
     fn generate_altitude(&self, octaves: u8) -> Vec<Vec<f64>> {
-        let mut noise_function = Multi::new(Perlin::new(self.seed), octaves, 1.0/180.0);
+        let mut noise_function = Multi::new(Perlin::new(self.seed), octaves, 1.0 / 180.0);
         noise_function.set_ampl_decay(0.5);
 
         let noise_function = Multiply::new(Constant::new(1.5), noise_function);
@@ -53,8 +56,7 @@ impl WorldGenerator {
 
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                let noise = noise_function.get([x as f64, y as f64]);
-                elevation_map[x][y] = noise;
+                elevation_map[x][y] = noise_function.get([x as f64, y as f64]);
             }
         }
 
@@ -64,64 +66,126 @@ impl WorldGenerator {
     fn generate_temperature_map(&self) -> Vec<Vec<f64>> {
         let mut temperature_map = vec![vec![0.0; self.world_size]; self.world_size];
 
-        let scaling = 1.0/90.0;
-        let perlin = Perlin::new(self.seed + 42);
-        let amplitudes = [1.0, 1.0/2.0, 1.0/4.0, 1.0/8.0, 1.0/16.0, 1.0/32.0];
-        let frequencies = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0].map(|x| x * scaling);
+        let noise_function = Multiply::new(Constant::new(1.5), Multi::new(Perlin::new(self.seed + 42), 7, 1.0 / 100.0));
 
-        let mut min = 10000.;
-        let mut max = -10000.;
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                temperature_map[x][y] = (
-                    amplitudes[0] * perlin.get([frequencies[0] * x as f64, frequencies[0] * y as f64])
-                        + amplitudes[1] * perlin.get([frequencies[1] * x as f64, frequencies[1] * y as f64])
-                        + amplitudes[2] * perlin.get([frequencies[2] * x as f64, frequencies[2] * y as f64])
-                        + amplitudes[3] * perlin.get([frequencies[3] * x as f64, frequencies[3] * y as f64])
-                        + amplitudes[4] * perlin.get([frequencies[4] * x as f64, frequencies[4] * y as f64])
-                        + amplitudes[5] * perlin.get([frequencies[5] * x as f64, frequencies[5] * y as f64])
-                ) / amplitudes.iter().sum::<f64>();
-                if temperature_map[x][y] > max { max = temperature_map[x][y]; }
-                if temperature_map[x][y] < min { min = temperature_map[x][y]; }
+                temperature_map[x][y] = noise_function.get([x as f64, y as f64]);
             }
         }
-        println!("temperature range: = [{min}, {max}]");
 
         return temperature_map;
     }
 
-    fn generate_lava_lakes_map(&self) -> Vec<Vec<f64>> {
+    fn generate_lava_lakes(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &Vec<Vec<Biomes>>) {
         let mut lava_lakes_map = vec![vec![0.0; self.world_size]; self.world_size];
 
-        let perlin = Perlin::new(self.seed + 742);
-        let scaling = 1.0/25.0;
+        let noise_function = Multiply::new(Constant::new(1.5), Multi::new(Perlin::new(self.seed + 7), 7, 1.0 / 30.0));
 
         for x in 0..self.world_size {
             for y in 0..self.world_size {
-                lava_lakes_map[x][y] = perlin.get([scaling * x as f64, scaling * y as f64])
+                lava_lakes_map[x][y] = noise_function.get([x as f64, y as f64]);
             }
         }
 
-        return lava_lakes_map;
+        for x in 0..self.world_size {
+            for y in 0..self.world_size {
+                if biomes_map[x][y] == Biomes::Desert && lava_lakes_map[x][y] < -0.6 {
+                    world[x][y].tile_type = TileType::Lava;
+                }
+            }
+        }
     }
 
-    fn generate_trees(&self, world: &mut Vec<Vec<Tile>>, biomes_map: Vec<Vec<Biomes>>) {
-        let trees_positions: Vec<Vec<usize>> = Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 2.5).generate().iter().map(
-            |point| vec![point[0] as usize, point[1] as usize]
-        ).collect();
+    fn generate_trees(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &Vec<Vec<Biomes>>, ) {
+        //forest
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 2.5).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Plain { world[x][y].content = Content::Tree(1) };
+            });
 
-        for coordinates in trees_positions {
-            let (x, y) = (coordinates[0], coordinates[1]);
-            if biomes_map[x][y] == Biomes::Forest {
-                world[x][y].content = Content::Tree(1);
-            }
-        }
+        //hill
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 3.5).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Hill { world[x][y].content = Content::Tree(1) };
+            });
+
+        //mountain
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 4.5).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Mountain { world[x][y].content = Content::Tree(1) };
+            });
+    }
+
+    fn generate_rocks(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &Vec<Vec<Biomes>>, ) {
+        //plains
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 5.0).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Forest { world[x][y].content = Content::Rock(1) };
+            });
+
+        //hills
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 4.0).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Hill { world[x][y].content = Content::Rock(1) };
+            });
+
+        //mountains
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 3.0).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Mountain { world[x][y].content = Content::Rock(1) };
+            });
+
+        //snowymountains
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 2.0).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::SnowyMountain { world[x][y].content = Content::Rock(1) };
+            });
+    }
+
+    fn generate_fishes(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &Vec<Vec<Biomes>>, ) {
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 4.0).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::ShallowWater { world[x][y].content = Content::Fish(1) };
+            });
+
+        Poisson2D::new().with_dimensions([self.world_size as f64, self.world_size as f64], 3.0).generate().iter()
+            .map(|point| vec![point[0] as usize, point[1] as usize])
+            .collect::<Vec<Vec<usize>>>().iter()
+            .for_each(|coordinates| {
+                let (x, y) = (coordinates[0], coordinates[1]);
+                if biomes_map[x][y] == Biomes::Deepwater { world[x][y].content = Content::Fish(1) };
+            });
     }
 
     fn get_biome(temperature: f64) -> Biomes {
         return match temperature {
-            t if t > 0.0 && t < 0.5 => Biomes::Desert,
-            t if t > -0.5 && t <= -0.0 => Biomes::Forest,
+            t if t < -0.3 => Biomes::Forest,
+            t if t > 0.2 => Biomes::Desert,
             _ => Biomes::Plain
         }
     }
@@ -130,7 +194,6 @@ impl WorldGenerator {
         let mut world = vec![vec![Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 }; self.world_size]; self.world_size];
         let mut biomes_map: Vec<Vec<Biomes>> = vec![vec![Biomes::Deepwater; self.world_size]; self.world_size];
         let temperature_map = self.generate_temperature_map();
-        let lava_lakes_map = self.generate_lava_lakes_map();
 
         for x in 0..self.world_size {
             for y in 0..self.world_size {
@@ -138,12 +201,16 @@ impl WorldGenerator {
                     h if h < -0.65 => Biomes::Deepwater,
                     h if h < -0.40 => Biomes::ShallowWater,
                     h if h < -0.30 => Biomes::Beach,
-                    h if h <  0.35 => Self::get_biome(temperature_map[x][y]),
-                    h if h <  0.55 => Biomes::Hill,
-                    h if h <  0.85 => Biomes::Mountain,
+                    h if h < 0.35 => Self::get_biome(temperature_map[x][y]),
+                    h if h < 0.55 => Biomes::Hill,
+                    h if h < 0.85 => Biomes::Mountain,
                     _ => Biomes::SnowyMountain,
                 };
+            }
+        }
 
+        for x in 0..self.world_size {
+            for y in 0..self.world_size {
                 world[x][y] = match biomes_map[x][y] {
                     Biomes::Deepwater => Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 },
                     Biomes::ShallowWater => Tile { tile_type: TileType::ShallowWater, content: Content::None, elevation: 0 },
@@ -155,23 +222,22 @@ impl WorldGenerator {
                     Biomes::Mountain => Tile { tile_type: TileType::Mountain, content: Content::None, elevation: 0 },
                     Biomes::SnowyMountain => Tile { tile_type: TileType::Snow, content: Content::None, elevation: 0 },
                 };
-
-                if biomes_map[x][y] == Biomes::Desert && lava_lakes_map[x][y] < -0.8 {
-                    world[x][y].tile_type = TileType::Lava;
-                }
             }
         }
 
-        self.generate_trees(&mut world, biomes_map);
+        self.generate_lava_lakes(&mut world, &biomes_map);
+        self.generate_trees(&mut world, &biomes_map);
+        self.generate_rocks(&mut world, &biomes_map);
+        self.generate_fishes(&mut world, &biomes_map);
 
         return world;
     }
 
-    fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, rivers_amount : f64) {
+    fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation: &Vec<Vec<f64>>, rivers_amount: f64) {
         let number_of_rivers = (world.len() as f64 * world.len() as f64 * rivers_amount / 1000.0) as usize;
 
         let rng_seed = {
-            let mut rng_seed = [0u8;32];
+            let mut rng_seed = [0u8; 32];
             rng_seed[0..4].copy_from_slice(&self.seed.to_le_bytes());
             rng_seed
         };
@@ -184,7 +250,7 @@ impl WorldGenerator {
         for _ in 0..number_of_rivers {
             let river_tiles = loop {
                 let start_coords = loop {
-                    let coords  = (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution));
+                    let coords = (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution));
 
                     if *elevation.at(coords) > 0.35 && world.at(coords).tile_type != TileType::ShallowWater {
                         break coords;
@@ -203,14 +269,14 @@ impl WorldGenerator {
                         break;
                     }
                     let coords = *river_tiles_stack.last().unwrap();
-                    if !(1..world.len() as isize - 1).contains(&coords.0) || !(1..world.len() as isize -1).contains(&coords.1) {
+                    if !(1..world.len() as isize - 1).contains(&coords.0) || !(1..world.len() as isize - 1).contains(&coords.1) {
                         if rng.sample(float_distribution) < 0.7 {
                             println!("ran off map at {coords:?}");
                             break;
                         }
                     }
 
-                            if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
+                    if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
                         println!("reached water at {coords:?}");
                         break;
                     }
@@ -264,10 +330,10 @@ impl WorldGenerator {
                         let inertia_factor = 0.004;
 
                         let direction_c = ((c.0 - coords.0) as f64, (c.1 - coords.1) as f64);
-                        let inertia_c = (direction_c.0*river_inertia.0 + direction_c.1*river_inertia.1) * inertia_factor;
+                        let inertia_c = (direction_c.0 * river_inertia.0 + direction_c.1 * river_inertia.1) * inertia_factor;
 
                         let direction_m = ((m.0 - coords.0) as f64, (m.1 - coords.1) as f64);
-                        let inertia_m = (direction_m.0*river_inertia.0 + direction_m.1*river_inertia.1) * inertia_factor;
+                        let inertia_m = (direction_m.0 * river_inertia.0 + direction_m.1 * river_inertia.1) * inertia_factor;
 
                         if elevation.at(c) - inertia_c < elevation.at(m) - inertia_m { min_index = i; }
                     }
