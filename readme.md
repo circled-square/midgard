@@ -25,6 +25,7 @@
   - plains biome: Rock
 - Generate random Contents
   - Garbage, Coin, Bin, Crate, Bank, Market
+  - Not on: DeepWater, ShallowWater
 
 
 ## Notes
