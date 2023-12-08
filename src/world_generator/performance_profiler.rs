@@ -29,6 +29,6 @@ impl PerformanceProfiler {
     }
 
     pub fn print_total_elapsed_time_in_ms(&mut self, text: &str) {
-                println!("Profiler: {text} {} ms", self.get_elapsed_time_in_ms(self.start_time));
+        println!("Profiler: {text} {} ms", self.get_elapsed_time_in_ms(self.start_time));
     }
 }

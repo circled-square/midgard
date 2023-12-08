@@ -72,10 +72,16 @@ impl WorldVisualizer {
     }
     fn color_tile_content(tile: &Tile) -> Option<[u8; 4]> {
         return match tile.content{
+            //Content::Water(_) => Some([])
             Content::Fish(_) => Some([255, 153, 102, 255]),
             Content::Tree(_) => Some([51, 102, 0, 255]),
             Content::Rock(_) => Some([128, 128, 128, 255]),
             Content::Fire => Some([255, 102, 0, 255]),
+            Content::Garbage(_) => Some([102, 153, 153, 255]),
+            Content::Coin(_) => Some([204, 153, 0, 255]),
+            Content::Bin(_) => Some([255, 103, 0, 255]),
+            Content::Crate(_) => Some([102, 51, 0, 255]),
+            Content::Market(_) => Some([143, 51, 255, 255]),
             _ => None
         }
     }
