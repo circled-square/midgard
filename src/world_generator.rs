@@ -8,7 +8,7 @@ use noise::*;
 use multi_octave_noise::Multi;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
 use fast_poisson::Poisson2D;
-use rand::{Rng, SeedableRng, thread_rng};
+use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
 use isize_index_matrix::*;
 use crate::world_generator::performance_profiler::PerformanceProfiler;
