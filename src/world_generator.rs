@@ -3,7 +3,6 @@ mod isize_index_matrix;
 mod performance_profiler;
 
 use std::collections::{HashMap, HashSet};
-use std::mem::forget;
 use std::time::SystemTime;
 use noise::*;
 use multi_octave_noise::Multi;
@@ -148,69 +147,6 @@ impl WorldGenerator {
                 }
             }
         }
-    }
-
-    fn generate_content(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, Vec<(usize, usize)>>, coordinates: &mut Poisson2D, radius: f64, biome: Biomes, tiles_types_to_avoid: Option<&Vec<TileType>>, content: Content) {
-        let mut profiler = PerformanceProfiler::new(SystemTime::now());
-
-        coordinates.set_dimensions([self.world_size as f64, self.world_size as f64], radius);
-        profiler.print_elapsed_time_in_ms("Poisson generation time");
-
-        for coordinate in coordinates.iter() {
-            let (x, y) = (coordinate[0] as usize, coordinate[1] as usize);
-            match biomes_map.get(&biome) {
-                Some(coords) => {
-                    if coords.contains(&(x, y)) {
-                        match tiles_types_to_avoid {
-                            Some(tiles) => {
-                                if tiles.iter().all(|b| *b != world[x][y].tile_type) {
-                                    world[x][y].content = content.clone();
-                                }
-                            },
-                            None => world[x][y].content = content.clone()
-                        }
-                    }
-                }
-                None => ()
-            }
-        }
-        profiler.print_elapsed_time_in_ms("tiles filling time");
-    }
-
-    fn generate_trees(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, Vec<(usize, usize)>>) {
-        let mut profiler = PerformanceProfiler::new(SystemTime::now());
-
-        let mut trees_coordinates = Poisson2D::new();
-        trees_coordinates.set_seed(self.seed as u64);
-        let tiles_types_to_avoid = vec![TileType::ShallowWater, TileType::DeepWater];
-
-        self.generate_content(world, biomes_map, &mut trees_coordinates, 2.5, Biomes::Forest, Some(&tiles_types_to_avoid), Content::Tree(1));
-        profiler.print_elapsed_time_in_ms("trees generation time, radius:2.5");
-
-        self.generate_content(world, biomes_map, &mut trees_coordinates, 3.5, Biomes::Hill, Some(&tiles_types_to_avoid), Content::Tree(1));
-        profiler.print_elapsed_time_in_ms("trees generation time, radius:3.5");
-
-        self.generate_content(world, biomes_map, &mut trees_coordinates, 4.5, Biomes::Mountain, Some(&tiles_types_to_avoid), Content::Tree(1));
-        profiler.print_elapsed_time_in_ms("trees generation time, radius:4.5");
-    }
-
-    fn generate_rocks(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, Vec<(usize, usize)>>) {
-        let mut rocks_coordinates = Poisson2D::new();
-        rocks_coordinates.set_seed(self.seed as u64);
-        let tiles_types_to_avoid = vec![TileType::ShallowWater, TileType::DeepWater];
-
-        self.generate_content(world, biomes_map, &mut rocks_coordinates, 5.0, Biomes::Plain, Some(&tiles_types_to_avoid), Content::Rock(1));
-        self.generate_content(world, biomes_map, &mut rocks_coordinates, 4.0, Biomes::Hill, Some(&tiles_types_to_avoid), Content::Rock(1));
-        self.generate_content(world, biomes_map, &mut rocks_coordinates, 3.0, Biomes::Mountain, Some(&tiles_types_to_avoid), Content::Rock(1));
-        self.generate_content(world, biomes_map, &mut rocks_coordinates, 2.0, Biomes::SnowyMountain, Some(&tiles_types_to_avoid), Content::Rock(1));
-    }
-
-    fn generate_fishes(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, Vec<(usize, usize)>>) {
-        let mut fishes_coordinates = Poisson2D::new();
-        fishes_coordinates.set_seed(self.seed as u64);
-
-        self.generate_content(world, biomes_map, &mut fishes_coordinates, 4.0, Biomes::ShallowWater, None, Content::Fish(1));
-        self.generate_content(world, biomes_map, &mut fishes_coordinates, 3.0, Biomes::Deepwater, None, Content::Fish(1));
     }
 
     fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, rivers_amount : f64) {
@@ -360,6 +296,70 @@ impl WorldGenerator {
         }
     }
 
+    fn generate_teleports(&self, world: &mut Vec<Vec<Tile>>) {
+        let mut teleport_coordinates = Poisson2D::new();
+        teleport_coordinates.set_seed(self.seed as u64);
+        teleport_coordinates.set_dimensions([self.world_size as f64, self.world_size as f64], 100.0);
+        let tiles_types_to_avoid = vec![TileType::ShallowWater, TileType::DeepWater, TileType::Lava];
+
+        for coordinate in teleport_coordinates.iter() {
+            let (x, y) = (coordinate[0] as usize, coordinate[1] as usize);
+            if tiles_types_to_avoid.iter().all(|t| *t != world[x][y].tile_type) {
+                world[x][y] = Tile { tile_type: TileType::Teleport(false), content: Content::None, elevation: 0 };
+            }
+        }
+    }
+
+    fn generate_content(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, Vec<(usize, usize)>>, coordinates: &mut Poisson2D, radius: f64, biome: Biomes, tiles_types_to_avoid: Option<&Vec<TileType>>, content: Content) {
+        coordinates.set_dimensions([self.world_size as f64, self.world_size as f64], radius);
+
+        for coordinate in coordinates.iter() {
+            let (x, y) = (coordinate[0] as usize, coordinate[1] as usize);
+            match biomes_map.get(&biome) {
+                Some(coords) => {
+                    if coords.contains(&(x, y)) {
+                        match tiles_types_to_avoid {
+                            Some(tiles) => {
+                                if tiles.iter().all(|t| *t != world[x][y].tile_type) {
+                                    world[x][y].content = content.clone();
+                                }
+                            },
+                            None => world[x][y].content = content.clone()
+                        }
+                    }
+                }
+                None => ()
+            }
+        }
+    }
+
+    fn generate_contents(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, Vec<(usize, usize)>>) {
+        let mut contents_coordinates = Poisson2D::new();
+        contents_coordinates.set_seed(self.seed as u64);
+        let tiles_types_to_avoid = vec![TileType::ShallowWater, TileType::DeepWater];
+
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 2.5, Biomes::Forest, Some(&tiles_types_to_avoid), Content::Tree(1));
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 3.5, Biomes::Hill, Some(&tiles_types_to_avoid), Content::Tree(1));
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 4.5, Biomes::Mountain, Some(&tiles_types_to_avoid), Content::Tree(1));
+
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::Hill, Some(&tiles_types_to_avoid), Content::Rock(1));
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 3.0, Biomes::Mountain, Some(&tiles_types_to_avoid), Content::Rock(1));
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 2.0, Biomes::SnowyMountain, Some(&tiles_types_to_avoid), Content::Rock(1));
+
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::ShallowWater, None, Content::Fish(1));
+        self.generate_content(world, biomes_map, &mut contents_coordinates, 3.0, Biomes::Deepwater, None, Content::Fish(1));
+
+        // self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::ShallowWater, Some(&tiles_types_to_avoid), Content::Garbage(1));
+        // self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::ShallowWater, Some(&tiles_types_to_avoid), Content::Coin(1));
+        // self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::ShallowWater, Some(&tiles_types_to_avoid), Content::Bin(0..5));
+        // self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::ShallowWater, Some(&tiles_types_to_avoid), Content::Crate(0..5));
+        // self.generate_content(world, biomes_map, &mut contents_coordinates, 4.0, Biomes::ShallowWater, Some(&tiles_types_to_avoid), Content::Market(1));
+
+        // Generate random Contents
+        // Garbage, Coin, Bin, Crate, Bank, Market, Teleport
+        // Not on: DeepWater, ShallowWater
+    }
+
     fn generate_spawnpoint(&self) -> (usize, usize) {
         (0, 0)
     }
@@ -386,19 +386,18 @@ impl Generator for WorldGenerator {
         self.generate_hellfire(&mut world, &mut biomes_map);
         profiler.print_elapsed_time_in_ms("hellfire generation time");
 
-        self.generate_trees(&mut world, &mut biomes_map);
-        profiler.print_elapsed_time_in_ms("total trees generation time");
+        self.generate_teleports(&mut world);
+        profiler.print_elapsed_time_in_ms("teleports generation time");
 
-        self.generate_rocks(&mut world, &mut biomes_map);
-        profiler.print_elapsed_time_in_ms("total rocks generation time");
-
-        self.generate_fishes(&mut world, &mut biomes_map);
-        profiler.print_elapsed_time_in_ms("total fishes generation time");
+        self.generate_contents(&mut world, &mut biomes_map);
+        profiler.print_elapsed_time_in_ms("Total contents generation time");
 
         let weather = self.generate_weather();
         profiler.print_elapsed_time_in_ms("weather generation time");
+
         let spawnpoint = self.generate_spawnpoint();
         profiler.print_elapsed_time_in_ms("spawnpoint generation time");
+
         let score = 100.0;
         profiler.print_elapsed_time_in_ms("score decision time");
 
