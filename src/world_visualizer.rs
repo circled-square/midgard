@@ -96,6 +96,7 @@ impl WorldVisualizer {
             TileType::Mountain => [153, 102, 51, 255],
             TileType::Snow => [255, 255, 255, 255],
             TileType::Teleport(_) => [102, 255, 255, 255],
+            TileType::Street => [64, 64, 64, 255],
             _ => [0, 0, 0, 255]
         }
     }

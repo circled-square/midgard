@@ -1,6 +1,7 @@
 mod multi_octave_noise;
 mod isize_index_matrix;
 mod performance_profiler;
+mod vector_math;
 
 use std::collections::{HashMap, HashSet};
 use std::time::SystemTime;
@@ -8,10 +9,11 @@ use noise::*;
 use multi_octave_noise::Multi;
 use robotics_lib::world::{worldgenerator::Generator, tile::Tile, tile::{TileType, Content}, environmental_conditions::{EnvironmentalConditions, WeatherType}};
 use fast_poisson::Poisson2D;
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{distributions, Rng, SeedableRng};
 use isize_index_matrix::*;
-use crate::world_generator::performance_profiler::PerformanceProfiler;
+use vector_math::*;
+use performance_profiler::PerformanceProfiler;
 
 pub struct WorldGenerator {
     seed: u32,
@@ -59,14 +61,11 @@ impl WorldGenerator {
         ).unwrap();
     }
 
-    fn generate_altitude(&self, octaves: u8) -> Vec<Vec<f64>> {
+    fn generate_elevation(&self, octaves: u8) -> Vec<Vec<f64>> {
         let mut noise_function = Multi::new(Perlin::new(self.seed), octaves, 1.0 / 180.0);
         noise_function.set_ampl_decay(0.5);
 
         let noise_function = Multiply::new(Constant::new(1.5), noise_function);
-
-        // clamp values in [-1,1] range
-        // let noise_function = Clamp::new(noise_function).set_bounds(-1.0, 1.0);
 
         let mut elevation_map = vec![vec![0.0; self.world_size]; self.world_size];
 
@@ -165,78 +164,104 @@ impl WorldGenerator {
         }
     }
 
-    fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, rivers_amount : f64) {
-        let number_of_rivers = (world.len() as f64 * world.len() as f64 * rivers_amount / 1000000.0) as usize;
-        let inertia_factor = 0.005;
+    fn generate_rivers(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, amount : f64, inertia_factor : f64, inertia_decay : f64, max_inertia : f64) {
+        let number_of_rivers = (world.len() as f64 * world.len() as f64 * amount / 1000000.0) as usize;
+        let random_jitter = 0.12;
 
-        let rng_seed = {
-            let mut rng_seed = [0u8; 32];
-            rng_seed[0..4].copy_from_slice(&self.seed.to_le_bytes());
-            rng_seed
-        };
+        let mut rng = StdRng::seed_from_u64(self.seed as u64 + 1);//seed incremented by one because otherwise we would end up trying to place roads on all the same places where we placed rivers
 
-        let mut rng = StdRng::from_seed(rng_seed.into());
-
-        let world_pos_distribution = rand::distributions::Uniform::new(0, world.len() as isize);
-        let float_distribution = rand::distributions::Uniform::new(0.0, 1.0);
+        let world_pos_distribution = distributions::Uniform::new(1, world.len() as isize-1);
+        let float_distribution = distributions::Uniform::new(0.0, 1.0);
         let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+
+        let poisson = Poisson2D::new()
+            .with_seed((self.seed+1) as u64)
+            .with_dimensions([world.len() as f64, world.len() as f64], world.len() as f64 / (number_of_rivers as f64));
+        let mut poisson_coords_iterator = poisson.into_iter();
 
         for _ in 0..number_of_rivers {
             let river_tiles = loop {
-
                 let mut number_of_loops_looking_for_start_coord = 0; //safeguard against infinite looping while looking for a valid random start coordinates in worlds that lack it
                 let start_coords = loop {
-                    let coords = (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution));
+                    let coords = poisson_coords_iterator.next()
+                        .map(|p| (p[0] as isize, p[1] as isize))
+                        .unwrap_or_else(|| (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution)));
 
                     if *elevation.at(coords) > 0.35 {
-                        break coords;
-                    }
+                        let mut should_discard = false;
+                        'outer: for x in -3..3 {
+                            for y in -3..3 {
+                                if let Some(Tile {tile_type: TileType::ShallowWater,..}) = world.at_checked((coords.0+x, coords.1+y)) {
+                                    should_discard = true;
+                                    break 'outer;
+                                }
+                            }
+                        }
 
-                    if number_of_loops_looking_for_start_coord > self.world_size * self.world_size * 2 {
-                        if *elevation.at(coords) > 0.15 {
+                        if !should_discard {
                             break coords;
                         }
+                    }
 
-                        if number_of_loops_looking_for_start_coord > self.world_size * self.world_size * 10 {
-                            return;
-                        }
+                    if number_of_loops_looking_for_start_coord > self.world_size * self.world_size * 10 {
+                        return;
                     }
                     number_of_loops_looking_for_start_coord += 1;
                 };
 
                 let mut river_tiles_stack = vec![start_coords];
-
-                let mut avoid_tiles = HashSet::new();
-                let mut river_tiles_set = HashSet::new();
-                let mut river_inertia = (0.0, 0.0);
+                let mut avoid_tiles = HashSet::from([start_coords]);
+                let mut river_tiles_set = HashSet::from([start_coords]);
+                let mut inertia = (0.0, 0.0);
+                let mut movement_debt = (0.0, 0.0);
 
                 loop {
                     if river_tiles_stack.is_empty() {
                         break;
                     }
                     let coords = *river_tiles_stack.last().unwrap();
+
+                    // backtrack to prev tile if the current is close to lava or close to a tile in avoid tiles
+                    {
+                        let mut should_backtrack = false;
+                        'outer:
+                        for x in -3..=3 {
+                            for y in -3..=3 {
+                                let c = (coords.0 + x, coords.1 + y);
+                                let last_tiles_size = river_tiles_stack.len().min(7);
+                                let last_tiles = &river_tiles_stack[river_tiles_stack.len() - last_tiles_size..];
+                                if river_tiles_set.contains(&c) && !last_tiles.contains(&c) {
+                                    should_backtrack = true;
+                                    break 'outer;
+                                }
+                                if let Some(Tile { tile_type: TileType::Lava, .. }) = world.at_checked(c) {
+                                    should_backtrack = true;
+                                    break 'outer;
+                                }
+                            }
+                        }
+                        if should_backtrack {
+                            let tile = river_tiles_stack.pop().unwrap();//backtrack to the previous tile
+                            river_tiles_set.remove(&tile);
+                            continue;
+                        }
+                    }
+
                     if [0, world.len() as isize-1].contains(&coords.0) || [0, world.len() as isize-1].contains(&coords.1) {
                         match rng.sample(float_distribution) {
-                            n if n < 0.6 => {
-                                //discard this river
-                                river_tiles_stack.clear();
-                                break;
+                            n if n < 0.5 => {
+                                break;//flow off the edge of the world
                             }
-                            n if n < 0.7 => {
-                                //flow off the edge of the world
-                                break;
-                            }
-                            n if n < 0.9 => {
-                                //backtrack to the previous tile
-                                river_tiles_stack.pop().unwrap();
+                            _ => {
+                                let tile = river_tiles_stack.pop().unwrap();//backtrack to the previous tile
+                                river_tiles_set.remove(&tile);
                                 continue;
                             }
-                            _ => {}
                         }
                     }
 
                     if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
-                        break;
+                        break; // flow into another river or into a lake
                     }
 
                     let candidates: Vec<_> =
@@ -250,15 +275,6 @@ impl WorldGenerator {
                                 if !(0..world.len() as isize).contains(&c.0) || !(0..world.len() as isize).contains(&c.1) {
                                     return None;
                                 }
-                                //discard tiles which are adjacent to a river tile (other than the last)
-                                for d in directions {
-                                    let c_near = (c.0 + d.0, c.1 + d.1);
-                                    if c_near == coords { continue; }
-
-                                    if river_tiles_set.contains(&c_near) {
-                                        return None;
-                                    }
-                                }
                                 return Some(c);
                             }).collect();
 
@@ -268,29 +284,61 @@ impl WorldGenerator {
                         river_tiles_set.remove(&tile);
                         continue;
                     }
-                    let mut min_index = 0;
 
-                    for i in 1..candidates.len() {
-                        let c = candidates[i];
-                        let m = candidates[min_index];
 
-                        let direction_c = ((c.0 - coords.0) as f64, (c.1 - coords.1) as f64);
-                        let inertia_c = (direction_c.0 * river_inertia.0 + direction_c.1 * river_inertia.1) * inertia_factor;
+                    let gradient_of_elevation = get_gradient(elevation, coords).unwrap();
+                    let direction =
+                        vec_normalize(
+                            vec_sum(
+                                vec_sum(
+                                    vec_mul_by_scalar(gradient_of_elevation, -1.0),
+                                    vec_mul_by_scalar(inertia, inertia_factor)
+                                ),
+                                vec_mul_by_scalar(((rng.sample(float_distribution) - 0.5) * 2.0, (rng.sample(float_distribution) - 0.5) * 2.0), random_jitter)
+                            )
+                        );
+                    inertia =
+                        vec_clamp(
+                            vec_sum(
+                                vec_mul_by_scalar(inertia, inertia_decay),
+                                direction
+                            ),
+                            max_inertia
+                        );
 
-                        let direction_m = ((m.0 - coords.0) as f64, (m.1 - coords.1) as f64);
-                        let inertia_m = (direction_m.0 * river_inertia.0 + direction_m.1 * river_inertia.1) * inertia_factor;
+                    movement_debt = vec_clamp(movement_debt, 1.0);
+                    movement_debt.0 += direction.0;
+                    movement_debt.1 += direction.1;
+                    let move_along_x_axis = movement_debt.0.abs() > movement_debt.1.abs();
 
-                        if elevation.at(c) - inertia_c < elevation.at(m) - inertia_m { min_index = i; }
+                    let x_candidate_dir = if direction.0 > 0.0 { 1 } else { -1 };
+                    let x_candidate = (coords.0 + x_candidate_dir, coords.1);
+                    let minus_x_candidate = (coords.0 - x_candidate_dir, coords.1);
+                    let y_candidate_dir = if direction.1 > 0.0 { 1 } else { -1 };
+                    let y_candidate = (coords.0, coords.1 + y_candidate_dir);
+                    let minus_y_candidate = (coords.0, coords.1 - y_candidate_dir);
+
+                    let target_dir = if move_along_x_axis {
+                        if candidates.contains(&x_candidate) { (x_candidate_dir, 0) }
+                        else if candidates.contains(&y_candidate) { (0, y_candidate_dir) }
+                        else if candidates.contains(&minus_y_candidate) { (0, -y_candidate_dir) }
+                        else { (-x_candidate_dir, 0) }
                     }
+                    else {
+                        if candidates.contains(&y_candidate) { (0, y_candidate_dir) }
+                        else if candidates.contains(&x_candidate) { (x_candidate_dir, 0) }
+                        else if candidates.contains(&minus_x_candidate) { (-x_candidate_dir, 0) }
+                        else { (0, -y_candidate_dir) }
+                    };
 
-                    let direction = (candidates[min_index].0 - coords.0, candidates[min_index].1 - coords.1);
+                    movement_debt.0 -= target_dir.0 as f64;
+                    movement_debt.1 -= target_dir.1 as f64;
 
-                    river_inertia.0 = (river_inertia.0 * 1.0 + direction.0 as f64).clamp(-4.0, 4.0);
-                    river_inertia.1 = (river_inertia.1 * 1.0 + direction.1 as f64).clamp(-4.0, 4.0);
+                    let target_tile = (coords.0 + target_dir.0, coords.1 + target_dir.1);
 
-                    avoid_tiles.insert(candidates[min_index]);
-                    river_tiles_stack.push(candidates[min_index]);
-                    river_tiles_set.insert(candidates[min_index]);
+                    avoid_tiles.insert(target_tile);
+                    river_tiles_stack.push(target_tile);
+                    river_tiles_set.insert(target_tile);
                 }
 
                 if river_tiles_stack.is_empty() {
@@ -301,17 +349,193 @@ impl WorldGenerator {
             };
 
             // for each river tile fill it and its neighbors with shallow water
-            for coords in river_tiles {
-                for (x,y) in directions.iter() {
-                    if let Some(tile) = world.at_mut_checked((coords.0 + x, coords.1 + y)) {
-                        tile.tile_type = TileType::ShallowWater;
+            {
+                for c in river_tiles {
+                    for (x, y) in directions.iter() {
+                        if let Some(tile) = world.at_mut_checked((c.0 + x, c.1 + y)) {
+                            tile.tile_type = TileType::ShallowWater;
+                        }
+                    }
+                    world.at_mut(c).tile_type = TileType::ShallowWater;
+                }
+            }
+        }
+    }
+    fn generate_street(&self, world: &mut Vec<Vec<Tile>>, elevation: &Vec<Vec<f64>>,
+                       inertia_factor: f64, inertia_decay: f64, max_inertia: f64, inertia: &mut (f64, f64),
+                       poi1: (isize, isize), poi2: (isize, isize))
+    {
+        let mut street_tiles_stack = vec![poi1];
+        let mut street_tiles_set = HashSet::from([poi1]);
+        let mut avoid_tiles = HashSet::from([poi1]);
+        let mut movement_debt = (0.0, 0.0);
+
+        loop {
+            if street_tiles_stack.is_empty() {
+                break;
+            }
+
+            let coords = *street_tiles_stack.last().unwrap();
+
+
+            let dist_to_poi2 = ((poi2.0 - coords.0) as f64, (poi2.1 - coords.1) as f64);
+            if vec_module(dist_to_poi2) < 1.2 {
+                break;
+            }
+
+            let gradient_of_elevation = get_gradient(elevation, coords).unwrap_or((0.0, 0.0));
+
+            let perpendiculars_to_gradient_of_elevation = [
+                vec_normalize((-gradient_of_elevation.1, gradient_of_elevation.0)),
+                vec_normalize((gradient_of_elevation.1, -gradient_of_elevation.0)),
+            ];
+
+            let desired_direction = vec_normalize(dist_to_poi2);
+
+            let perpendicular_to_gradient_of_elevation_concordant_to_desired_direction = {
+                let desired_direction_dot_perpendiculars_to_gradient_of_elevation =
+                    perpendiculars_to_gradient_of_elevation.map(|p| vec_dot(p, desired_direction));
+                let mut max = 0;
+                for i in 1..desired_direction_dot_perpendiculars_to_gradient_of_elevation.len() {
+                    if desired_direction_dot_perpendiculars_to_gradient_of_elevation[i] > desired_direction_dot_perpendiculars_to_gradient_of_elevation[max] {
+                        max = i;
                     }
                 }
-                world.at_mut(coords).tile_type = TileType::ShallowWater;
+                perpendiculars_to_gradient_of_elevation[max]
+            };
+
+            let proximity_threshold = (((poi1.0 - poi2.0).pow(2) + (poi1.1 - poi2.1).pow(2)) as f64).sqrt() / 2.0;
+            let proximity_multiplier = f64::max(1.0, proximity_threshold / vec_module(dist_to_poi2));
+
+            let direction = vec_sum(
+                vec_sum(
+                    vec_mul_by_scalar(desired_direction, proximity_multiplier),
+                    vec_mul_by_scalar(*inertia, inertia_factor)
+                ),
+                vec_mul_by_scalar(perpendicular_to_gradient_of_elevation_concordant_to_desired_direction, 0.5)
+            );
+            let direction = vec_normalize(direction);
+
+            movement_debt = vec_clamp(movement_debt, 5.0);
+            movement_debt.0 += direction.0;
+            movement_debt.1 += direction.1;
+            let move_along_x_axis = movement_debt.0.abs() > movement_debt.1.abs();
+
+
+            let x_candidate_dir = if direction.0 > 0.0 { 1 } else { -1 };
+            let y_candidate_dir = if direction.1 > 0.0 { 1 } else { -1 };
+
+            let target_dir = if move_along_x_axis {
+                (x_candidate_dir, 0)
+            } else {
+                (0, y_candidate_dir)
+            };
+
+            movement_debt.0 -= target_dir.0 as f64;
+            movement_debt.1 -= target_dir.1 as f64;
+
+            *inertia = (inertia.0 + direction.0, inertia.1 + direction.1);
+            *inertia = vec_mul_by_scalar(*inertia, inertia_decay);
+            *inertia = vec_clamp(*inertia, max_inertia);
+
+            let target_tile = (coords.0 + target_dir.0, coords.1 + target_dir.1);
+
+            avoid_tiles.insert(target_tile);
+            street_tiles_stack.push(target_tile);
+            street_tiles_set.insert(target_tile);
+        }
+
+        for pos in street_tiles_stack {
+            if let Some(tile) = world.at_mut_checked(pos) {
+                if ![TileType::Lava, TileType::DeepWater, TileType::ShallowWater].contains(&tile.tile_type) {
+                    tile.tile_type = TileType::Street;
+                }
             }
         }
     }
 
+    fn generate_streets(&self, world: &mut Vec<Vec<Tile>>, elevation : &Vec<Vec<f64>>, amount : f64, inertia_factor : f64, inertia_decay : f64, max_inertia : f64) {
+        //this function generates points of interest in the map and tries to create roads connecting them
+        let poi_distance= 50.0 / amount;
+        let mut rng = StdRng::seed_from_u64(self.seed as u64 + 1);//seed incremented by one because otherwise we would end up trying to place roads on all the same places where we placed rivers
+
+        let poisson = Poisson2D::new()
+            .with_seed((self.seed+1) as u64)
+            .with_dimensions([world.len() as f64 * 1.5, world.len() as f64 * 1.5], poi_distance);
+        let poi_vec : Vec<_> =
+            poisson.into_iter()
+                .map(|p| (p[0] - world.len() as f64 * 0.25, p[1] - world.len() as f64 * 0.25))
+                .map(|p| (p.0 as isize, p.1 as isize))
+                .collect();
+
+        let random_poi_distribution = distributions::Uniform::new(0, poi_vec.len());
+
+        let mut street_map = HashSet::new();
+        let number_of_streets = ((world.len() * world.len()) as f64/ (poi_distance * poi_distance)) as usize * 3 / 2;
+        let mut number_of_empty_streets_produced = 0; // stop after number_of_streets empty streets have been produced
+
+        while street_map.len() < number_of_streets * 2 {
+            // generate a street
+            let start_poi = rng.sample(random_poi_distribution);
+            let number_of_pois_in_street = world.len() / poi_distance as usize * 2;
+            let mut street = vec![start_poi];
+            let mut avoid_set = HashSet::from([start_poi]);
+
+            for _ in 0..number_of_pois_in_street {
+                let last_poi_index = *street.last().unwrap();
+                let last_poi = poi_vec[last_poi_index];
+
+                let mut loop_iterations = 0;
+                let next_poi_index = loop {
+                    let next_index = rng.sample(random_poi_distribution);
+                    if avoid_set.contains(&next_index) || next_index == last_poi_index {
+                        continue;
+                    }
+                    if street_map.contains(&(last_poi_index, next_index)) {
+                        continue;
+                    }
+
+                    let next = poi_vec[next_index];
+
+                    let dist_vec = ((last_poi.0 - next.0) as f64, (last_poi.1 - next.1) as f64);
+                    let dist = vec_module(dist_vec);
+
+                    if dist < poi_distance * 1.7 {
+                        break Some(next_index);
+                    }
+
+                    if loop_iterations as f64 > amount * amount * 10.0 {
+                        //no valid next_poi could be found
+                        break None;
+                    }
+                    loop_iterations += 1;
+                };
+
+                if let Some(next_poi_index) = next_poi_index {
+                    street_map.insert((last_poi_index, next_poi_index));
+                    street_map.insert((next_poi_index, last_poi_index));
+                    avoid_set.insert(next_poi_index);
+                    street.push(next_poi_index);
+                } else {
+                    break;
+                }
+            }
+
+            let mut inertia = (0.0, 0.0);
+            for i in 0..street.len()-1 {
+                let poi1 = poi_vec[street[i]];
+                let poi2 = poi_vec[street[i+1]];
+                self.generate_street(world, elevation, inertia_factor, inertia_decay, max_inertia, &mut inertia, poi1, poi2);
+                inertia = vec_mul_by_scalar(inertia, 5.0);
+            }
+            if street.len() == 1 {
+                number_of_empty_streets_produced += 1;
+            }
+            if number_of_empty_streets_produced > number_of_streets {
+                break;
+            }
+        }
+    }
     fn generate_teleports(&self, world: &mut Vec<Vec<Tile>>) {
         let mut teleport_coordinates = Poisson2D::new();
         let random_bias = StdRng::seed_from_u64(self.seed as u64).gen_range(0..100);
@@ -431,14 +655,16 @@ impl Generator for WorldGenerator {
         let mut world = vec![vec![Tile { tile_type: TileType::DeepWater, content: Content::None, elevation: 0 }; self.world_size]; self.world_size];
         profiler.print_elapsed_time_in_ms("water world generation time");
 
-        let altitude_map = self.generate_altitude(5);
-        profiler.print_elapsed_time_in_ms("altitude generation time");
+        let elevation_map = self.generate_elevation(6);
+        profiler.print_elapsed_time_in_ms("elevation generation time");
 
-        let mut biomes_map = self.generate_biomes(&mut world, &altitude_map);
+        let mut biomes_map = self.generate_biomes(&mut world, &elevation_map);
         profiler.print_elapsed_time_in_ms("biomes generation time");
 
-        self.generate_rivers(&mut world, &self.generate_altitude(7), 30.0);
+        self.generate_rivers(&mut world, &elevation_map, 80.0,  0.05, 0.9, 4.0);
         profiler.print_elapsed_time_in_ms("rivers generation time");
+
+        self.generate_streets(&mut world, &elevation_map, 0.5, 2.0, 0.8, 2.5);
 
         self.generate_hellfire(&mut world, &mut biomes_map);
         profiler.print_elapsed_time_in_ms("hellfire generation time");
