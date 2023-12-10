@@ -1,12 +1,25 @@
 use noise::NoiseFn;
-pub struct Multi<F : NoiseFn<f64, 2>> {
-    f : F, octaves : u8, freq : f64, ampl_decay : f64
+pub struct Multi<F: NoiseFn<f64, 2>> {
+    f: F,
+    octaves: u8,
+    freq: f64,
+    ampl_decay: f64,
 }
-impl<F : NoiseFn<f64, 2>> Multi<F> {
-    pub fn new(f : F, octaves: u8, freq : f64) -> Self { Self { f, octaves, freq, ampl_decay: 0.5} }
-    pub fn set_ampl_decay(&mut self, ampl_decay : f64) { self.ampl_decay = ampl_decay; }
+impl<F: NoiseFn<f64, 2>> Multi<F> {
+    pub fn new(f: F, octaves: u8, freq: f64) -> Self {
+        Self {
+            f,
+            octaves,
+            freq,
+            ampl_decay: 0.5,
+        }
+    }
+    #[allow(dead_code)]
+    pub fn set_ampl_decay(&mut self, ampl_decay: f64) {
+        self.ampl_decay = ampl_decay;
+    }
 }
-impl<F : NoiseFn<f64, 2>> NoiseFn<f64, 2> for  Multi<F> {
+impl<F: NoiseFn<f64, 2>> NoiseFn<f64, 2> for Multi<F> {
     fn get(&self, point: [f64; 2]) -> f64 {
         let mut ret = 0f64;
 
@@ -22,7 +35,6 @@ impl<F : NoiseFn<f64, 2>> NoiseFn<f64, 2> for  Multi<F> {
 
         let divisor = 2.0 - 0.5f64.powi(self.octaves as i32 - 1);
 
-        ret/divisor
+        ret / divisor
     }
 }
-

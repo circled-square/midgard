@@ -1,31 +1,40 @@
 use bevy::app::{App, Update};
-use bevy::DefaultPlugins;
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
-use bevy_pixels::{PixelsPlugin, PixelsWrapper};
+use bevy::DefaultPlugins;
 use bevy_pixels::prelude::*;
+use bevy_pixels::{PixelsPlugin, PixelsWrapper};
 use robotics_lib::world::tile::{Content, Tile, TileType};
 
 #[derive(Resource)]
 struct WorldMatrixResource {
-    matrix: Vec<Vec<Tile>>
+    matrix: Vec<Vec<Tile>>,
 }
 
 #[derive(Resource)]
 struct PixelScalingResource {
-    pixel_scaling: usize
+    pixel_scaling: usize,
 }
 
 pub struct WorldVisualizer {}
 
 impl WorldVisualizer {
-    fn draw_window(mut wrapper_query: Query<&mut PixelsWrapper>, world: Res<WorldMatrixResource>, pixel_scaling: Res<PixelScalingResource>) {
+    fn draw_window(
+        mut wrapper_query: Query<&mut PixelsWrapper>,
+        world: Res<WorldMatrixResource>,
+        pixel_scaling: Res<PixelScalingResource>,
+    ) {
         let pixel_scaling = pixel_scaling.pixel_scaling;
 
         //Bevy pixels stuff
-        let Ok(mut wrapper) = wrapper_query.get_single_mut() else { return };
+        let Ok(mut wrapper) = wrapper_query.get_single_mut() else {
+            return;
+        };
         let frame_row_len = world.matrix.len() * pixel_scaling;
-        wrapper.pixels.resize_buffer(frame_row_len as u32, frame_row_len as u32).unwrap();
+        wrapper
+            .pixels
+            .resize_buffer(frame_row_len as u32, frame_row_len as u32)
+            .unwrap();
         let frame = wrapper.pixels.frame_mut();
 
         assert_eq!(frame_row_len * frame_row_len * 4, frame.len());
@@ -34,12 +43,13 @@ impl WorldVisualizer {
             for j in 0..world.matrix.len() {
                 for x in 0..pixel_scaling {
                     for y in 0..pixel_scaling {
-                        let color = if x == pixel_scaling/2 && y == pixel_scaling/2 {
-                            Self::color_tile_content(&world.matrix[i][j]).unwrap_or(Self::color_tile(&world.matrix[i][j]))
+                        let color = if x == pixel_scaling / 2 && y == pixel_scaling / 2 {
+                            Self::color_tile_content(&world.matrix[i][j])
+                                .unwrap_or(Self::color_tile(&world.matrix[i][j]))
                         } else {
                             Self::color_tile(&world.matrix[i][j])
                         };
-                        let pixel_coords = (i*pixel_scaling + x, j*pixel_scaling + y);
+                        let pixel_coords = (i * pixel_scaling + x, j * pixel_scaling + y);
                         let pixel_index = pixel_coords.0 + frame_row_len * pixel_coords.1;
                         frame[pixel_index * 4..pixel_index * 4 + 4].copy_from_slice(&color);
                     }
@@ -61,7 +71,6 @@ impl WorldVisualizer {
             ..default()
         };
 
-
         App::new()
             .add_plugins((DefaultPlugins.set(window_plugin), PixelsPlugin::default()))
             .add_systems(Update, bevy::window::close_on_esc)
@@ -71,7 +80,7 @@ impl WorldVisualizer {
             .run();
     }
     fn color_tile_content(tile: &Tile) -> Option<[u8; 4]> {
-        return match tile.content{
+        return match tile.content {
             //Content::Water(_) => Some([])
             Content::Fish(_) => Some([255, 153, 102, 255]),
             Content::Tree(_) => Some([51, 102, 0, 255]),
@@ -82,10 +91,10 @@ impl WorldVisualizer {
             Content::Bin(_) => Some([255, 103, 0, 255]),
             Content::Crate(_) => Some([102, 51, 0, 255]),
             Content::Market(_) => Some([143, 51, 255, 255]),
-            _ => None
-        }
+            _ => None,
+        };
     }
-    fn color_tile(tile : &Tile) -> [u8; 4] {
+    fn color_tile(tile: &Tile) -> [u8; 4] {
         return match tile.tile_type {
             TileType::DeepWater => [0, 0, 127, 255],
             TileType::ShallowWater => [0, 0, 255, 255],
@@ -97,7 +106,7 @@ impl WorldVisualizer {
             TileType::Snow => [255, 255, 255, 255],
             TileType::Teleport(_) => [102, 255, 255, 255],
             TileType::Street => [64, 64, 64, 255],
-            _ => [0, 0, 0, 255]
-        }
+            _ => [0, 0, 0, 255],
+        };
     }
 }

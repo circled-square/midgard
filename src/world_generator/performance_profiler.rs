@@ -7,7 +7,10 @@ pub struct PerformanceProfiler {
 
 impl PerformanceProfiler {
     pub fn new(start_time: SystemTime) -> Self {
-        Self { start_time, last_time: start_time }
+        Self {
+            start_time,
+            last_time: start_time,
+        }
     }
 
     #[allow(dead_code)]
@@ -25,10 +28,16 @@ impl PerformanceProfiler {
     }
 
     pub fn print_elapsed_time_in_ms(&mut self, text: &str) {
-        println!("Profiler: {text} {} ms", self.get_elapsed_time_in_ms(self.last_time));
+        println!(
+            "Profiler: {text} {} ms",
+            self.get_elapsed_time_in_ms(self.last_time)
+        );
     }
 
     pub fn print_total_elapsed_time_in_ms(&mut self, text: &str) {
-        println!("Profiler: {text} {} ms", self.get_elapsed_time_in_ms(self.start_time));
+        println!(
+            "Profiler: {text} {} ms",
+            self.get_elapsed_time_in_ms(self.start_time)
+        );
     }
 }
