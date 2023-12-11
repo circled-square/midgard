@@ -38,6 +38,9 @@ pub struct WorldGeneratorParameters {
     /// if true disables weather generation and the weather will always be sunny
     pub always_sunny: bool,
 
+    /// the number of days of weather that should be generated
+    pub weather_forecast_length: u64,
+
     /// the amount of minutes that pass for each tick
     pub time_progression_minutes: u8,
 
@@ -71,11 +74,13 @@ pub struct WorldGeneratorParameters {
     /// Controls the amount of each tile content to be spawned. See [ ContentsRadii ]
     pub contents_radii: ContentsRadii,
 }
+
 /// the default values are the following:
 /// ```
 /// seed: rand::random(),
 /// world_size: 300,
 /// always_sunny: false,
+/// weather_forecast_length: 7,
 /// time_progression_minutes: 10,
 /// starting_hour: 8,
 /// world_scale: 1.0,
@@ -92,6 +97,7 @@ impl Default for WorldGeneratorParameters {
             seed: rand::random(),
             world_size: 300,
             always_sunny: false,
+            weather_forecast_length: 7,
             time_progression_minutes: 10,
             starting_hour: 8,
             world_scale: 1.0,

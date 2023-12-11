@@ -72,7 +72,9 @@ impl WorldGenerator {
 
                 let mut rng = StdRng::seed_from_u64(seed);
 
-                for _i in 0..rng.gen_range(3..10) {
+                assert_ne!(self.params.weather_forecast_length, 0, "weather_forecast_length must be > 0");
+
+                for _i in 0..self.params.weather_forecast_length {
                     weather_forecast.push(weather_types[rng.gen_range(0..weather_types.len())]);
                 }
                 weather_forecast
