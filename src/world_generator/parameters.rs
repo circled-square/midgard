@@ -69,15 +69,18 @@ pub struct WorldGeneratorParameters {
     /// If set to `None` the teleport generation step will be skipped.
     pub amount_of_teleports: Option<f64>,
 
+    /// Controls the maximum elevation, and scales all elevation accordingly.
+    pub elevation_multiplier: Option<f64>,
+
+    /// Controls the amount of each tile content to be spawned. See [ ContentsRadii ]
+    pub contents_radii: ContentsRadii,
+
     /// Sets a custom score table.
     /// If set to `None` the default one provided by `robotics_lib` will be used.
     pub score_table: Option<HashMap<Content, f32>>,
 
     /// sets the maximum score the robot can earn
     pub max_score: f32,
-
-    /// Controls the amount of each tile content to be spawned. See [ ContentsRadii ]
-    pub contents_radii: ContentsRadii,
 }
 
 impl Default for WorldGeneratorParameters {
@@ -95,9 +98,10 @@ impl Default for WorldGeneratorParameters {
     /// amount_of_rivers: Some(1.0),
     /// amount_of_streets: Some(1.0),
     /// amount_of_teleports: Some(1.0),
+    /// elevation_multiplier: Some(4.0),
+    /// contents_radii: ContentsRadii::default(),
     /// score_table: None,
     /// max_score: 1000.0,
-    /// contents_radii: ContentsRadii::default(),
     /// # };
     /// ```
     fn default() -> Self {
@@ -112,9 +116,10 @@ impl Default for WorldGeneratorParameters {
             amount_of_rivers: Some(1.0),
             amount_of_streets: Some(1.0),
             amount_of_teleports: Some(1.0),
+            elevation_multiplier: Some(4.0),
+            contents_radii: ContentsRadii::default(),
             score_table: None,
             max_score: 1000.0,
-            contents_radii: ContentsRadii::default(),
         }
     }
 }
