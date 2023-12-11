@@ -17,7 +17,9 @@ struct PixelScalingResource {
 }
 
 /// Provides the `visualize` method to render the world
-///
+/// 
+/// <img src="pic_trulli.jpg" alt="Italian Trulli">
+/// 
 /// # Examples
 /// ```
 /// use midgard::world_generator::WorldGeneratorParameters;
@@ -27,15 +29,15 @@ struct PixelScalingResource {
 /// // Import the visualizer if you want to view a 2D render of your world
 /// use midgard::world_visualizer::WorldVisualizer;
 /// 
-/// fn main() {
-///     // Instantiate the World Generator with default parameters
-///     let mut world_generator = WorldGenerator::new(Default::default());
-///     let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
-///     
-///     // Use the 'visualize' method of 'WorldVisualizer' to render the generated world
-///     // the 2nd parameter is the window resolution and the 3rd is the scaling
-///     WorldVisualizer::visualize(world, 600);
-/// }
+/// # fn main() {
+/// // Instantiate the World Generator with default parameters
+/// let mut world_generator = WorldGenerator::new(Default::default());
+/// let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
+/// 
+/// // Use the 'visualize' method of 'WorldVisualizer' to render the generated world
+/// // the 2nd parameter is the window resolution and the 3rd is the scaling
+/// WorldVisualizer::visualize(world, 600);
+/// # }
 /// ```
 pub struct WorldVisualizer {}
 
@@ -91,6 +93,10 @@ impl WorldVisualizer {
     /// let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
     /// WorldVisualizer::visualize(world, 600);
     /// ```
+    /// 
+    /// # Notes
+    /// 
+    /// The function panics if the resolution is lower than the world size.
     pub fn visualize(world: Vec<Vec<Tile>>, resolution: usize) {
         assert!(resolution >= world.len(), "WorldVisualizer::visualize must be called with resolution >= world_size ({resolution} < {})", world.len());
 

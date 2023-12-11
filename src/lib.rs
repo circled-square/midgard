@@ -48,27 +48,28 @@
 //! // Import the 'Generator' trait and  'WorldGeneratorParameters' to use the 'WorldGenerator'
 //! use midgard::world_generator::WorldGeneratorParameters;
 //! use robotics_lib::world::world_generator::Generator;
+//! 
 //! // Import the "WorldGenerator"
 //! use midgard::world_generator::WorldGenerator;
 //! 
 //! // Import the visualizer if you want to view a 2D render of your world
 //! use midgard::world_visualizer::WorldVisualizer;
 //! 
-//! fn main() {
-//!     // Define the World Generator parameters using the dedicated struct
-//!     let params = WorldGeneratorParameters {
-//!         world_size: 300,
-//!         ..Default::default()
-//!     };
+//! # fn main() {
+//! // Define the World Generator parameters using the dedicated struct
+//! let params = WorldGeneratorParameters {
+//!     world_size: 300,
+//!     ..Default::default()
+//! };
 //! 
-//!     // Instantiate the World Generator with the static method 'new', passing the parameters
-//!     let mut world_generator = WorldGenerator::new(params);
-//!     let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
-//!     
-//!     // Use the 'visualize' method to render the generated world
-//!     // the 2nd parameter is the window resolution and the 3rd is the scaling
-//!     WorldVisualizer::visualize(world, 600, 2);
-//! }
+//! // Instantiate the World Generator with the static method 'new', passing the parameters
+//! let mut world_generator = WorldGenerator::new(params);
+//! let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
+//! 
+//! // Use the 'visualize' method to render the generated world
+//! // the 2nd parameter is the window resolution and the 3rd is the scaling
+//! WorldVisualizer::visualize(world, 600, 2);
+//! # }
 //! ```
 
 /// World Generator
