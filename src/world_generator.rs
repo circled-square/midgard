@@ -102,6 +102,15 @@ impl WorldGenerator {
         return elevation_map;
     }
 
+    fn set_elevation_on_tiles(&self, world: &mut Vec<Vec<Tile>>, elevation_map: &Vec<Vec<f64>>) {
+        for x in 0..world.len() {
+            for y in 0..world.len() {
+                let elevation_normalized = (elevation_map[x][y].clamp(-1.0, 1.0) + 1.0) / 2.0;
+                world[x][y].elevation = (elevation_normalized * self.params.elevation_multiplier.unwrap()) as usize;
+            }
+        }
+    }
+
     fn generate_temperature_map(&self, seed: u64) -> Vec<Vec<f64>> {
         let world_size = self.params.world_size;
         let mut temperature_map = vec![vec![0.0; world_size]; world_size];
@@ -766,6 +775,11 @@ impl Generator for WorldGenerator {
         let spawn_point = call_with_seed!(self.generate_spawnpoint(&mut biomes_map));
         println!("Spawn point {spawn_point:?}");
         profiler.print_elapsed_time_in_ms("spawn point generation time");
+
+        if self.params.elevation_multiplier.is_some() {
+            self.set_elevation_on_tiles(&mut world, &elevation_map);
+            profiler.print_elapsed_time_in_ms("elevation setting time");
+        }
 
         profiler.print_total_elapsed_time_in_ms("Total generation time");
 
