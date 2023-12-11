@@ -79,26 +79,26 @@ pub struct WorldGeneratorParameters {
     pub contents_radii: ContentsRadii,
 }
 
-/// The default values are the following:
-/// ```
-/// # use midgard::world_generator::*;
-/// # WorldGeneratorParameters {
-/// seed: rand::random(),
-/// world_size: 300,
-/// always_sunny: false,
-/// weather_forecast_length: 7,
-/// time_progression_minutes: 10,
-/// starting_hour: 8,
-/// world_scale: 1.0,
-/// amount_of_rivers: Some(1.0),
-/// amount_of_streets: Some(1.0),
-/// amount_of_teleports: Some(1.0),
-/// score_table: None,
-/// max_score: 1000.0,
-/// contents_radii: ContentsRadii::default(),
-/// # };
-/// ```
 impl Default for WorldGeneratorParameters {
+    /// The default values are the following:
+    /// ```
+    /// # use midgard::world_generator::*;
+    /// # WorldGeneratorParameters {
+    /// seed: rand::random(),
+    /// world_size: 300,
+    /// always_sunny: false,
+    /// weather_forecast_length: 7,
+    /// time_progression_minutes: 10,
+    /// starting_hour: 8,
+    /// world_scale: 1.0,
+    /// amount_of_rivers: Some(1.0),
+    /// amount_of_streets: Some(1.0),
+    /// amount_of_teleports: Some(1.0),
+    /// score_table: None,
+    /// max_score: 1000.0,
+    /// contents_radii: ContentsRadii::default(),
+    /// # };
+    /// ```
     fn default() -> Self {
         Self {
             seed: rand::random(),
@@ -151,25 +151,25 @@ pub struct ContentsRadii {
     pub markets: u64,
 }
 
-/// The default values are the following:
-/// ```
-/// # midgard::world_generator::ContentsRadii {
-/// trees_in_forest: 3,
-/// trees_in_hill: 4,
-/// trees_in_mountain: 5,
-/// rocks_in_plains: 5,
-/// rocks_in_hill: 4,
-/// rocks_in_mountain: 3,
-/// fish_in_shallow_water: 5,
-/// fish_in_deep_water: 4,
-/// garbage: 10,
-/// coins: 20,
-/// garbage_bins: 20,
-/// crates: 40,
-/// markets: 50,
-/// # };
-/// ```
 impl Default for ContentsRadii {
+    /// The default values are the following:
+    /// ```
+    /// # midgard::world_generator::ContentsRadii {
+    /// trees_in_forest: 3,
+    /// trees_in_hill: 4,
+    /// trees_in_mountain: 5,
+    /// rocks_in_plains: 5,
+    /// rocks_in_hill: 4,
+    /// rocks_in_mountain: 3,
+    /// fish_in_shallow_water: 5,
+    /// fish_in_deep_water: 4,
+    /// garbage: 10,
+    /// coins: 20,
+    /// garbage_bins: 20,
+    /// crates: 40,
+    /// markets: 50,
+    /// # };
+    /// ```
     fn default() -> Self {
         Self {
             trees_in_forest: 3,
