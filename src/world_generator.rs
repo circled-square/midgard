@@ -14,7 +14,8 @@ use rand::rngs::StdRng;
 use rand::{distributions, Rng, SeedableRng};
 use robotics_lib::world::{environmental_conditions::{EnvironmentalConditions, WeatherType}, tile::Tile, tile::{Content, TileType}, world_generator::Generator};
 use std::collections::{HashMap, HashSet};
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 use std::time::SystemTime;
 use vector_math::*;
 
@@ -70,7 +71,7 @@ impl WorldGenerator {
 
                 let mut rng = StdRng::seed_from_u64(seed);
 
-                for _i in 0..rng.gen_range(3..10) {
+                for _i in 0..rng.gen_range(10..100) {
                     weather_forecast.push(weather_types[rng.gen_range(0..weather_types.len())]);
                 }
                 weather_forecast
