@@ -47,6 +47,8 @@ macro_rules! call_with_seed {
     }}
 }
 
+const WORLD_SCALE_MULTIPLIER : f64 = 180.0;
+
 impl WorldGenerator {
     pub fn new(params: WorldGeneratorParameters) -> Self {
         let mut poisson = Poisson2D::new();
@@ -81,7 +83,7 @@ impl WorldGenerator {
 
     fn generate_elevation(&self, seed: u64) -> Vec<Vec<f64>> {
         let octaves = 6;
-        let noise_function = Multi::new(Perlin::new(seed as u32), octaves, 1.0 / self.params.world_scale);
+        let noise_function = Multi::new(Perlin::new(seed as u32), octaves, 1.0 / (self.params.world_scale * WORLD_SCALE_MULTIPLIER));
         let world_size = self.params.world_size;
 
         let noise_function = Multiply::new(Constant::new(1.5), noise_function);
@@ -103,7 +105,7 @@ impl WorldGenerator {
 
         let noise_function = Multiply::new(
             Constant::new(1.5),
-            Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.56)),
+            Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.56 * WORLD_SCALE_MULTIPLIER)),
         );
 
         for x in 0..world_size {
@@ -169,11 +171,11 @@ impl WorldGenerator {
 
         let lava_noise_function = Multiply::new(
             Constant::new(1.5),
-            Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.17)),
+            Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.17 * WORLD_SCALE_MULTIPLIER)),
         );
         let fire_noise_function = Multiply::new(
             Constant::new(1.5),
-            Multi::new(Perlin::new(seed as u32 + 1), 7, 1.0 / (self.params.world_scale * 0.17)),
+            Multi::new(Perlin::new(seed as u32 + 1), 7, 1.0 / (self.params.world_scale * 0.17 * WORLD_SCALE_MULTIPLIER)),
         );
         let lava_noise = |x : usize, y : usize| lava_noise_function.get([x as f64, y as f64]);
         let fire_noise = |x : usize, y : usize| fire_noise_function.get([x as f64, y as f64]);
