@@ -12,7 +12,7 @@ use num_traits::pow::Pow;
 use performance_profiler::PerformanceProfiler;
 use rand::rngs::StdRng;
 use rand::{distributions, Rng, SeedableRng};
-use robotics_lib::world::{environmental_conditions::{EnvironmentalConditions, WeatherType}, tile::Tile, tile::{Content, TileType}, worldgenerator::Generator};
+use robotics_lib::world::{environmental_conditions::{EnvironmentalConditions, WeatherType}, tile::Tile, tile::{Content, TileType}, world_generator::Generator};
 use std::collections::{HashMap, HashSet};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::time::SystemTime;
