@@ -34,17 +34,13 @@ struct PixelScalingResource {
 ///     
 ///     // Use the 'visualize' method of 'WorldVisualizer' to render the generated world
 ///     // the 2nd parameter is the window resolution and the 3rd is the scaling
-///     WorldVisualizer::visualize(world, 600, 2);
+///     WorldVisualizer::visualize(world, 600);
 /// }
 /// ```
 pub struct WorldVisualizer {}
 
 impl WorldVisualizer {
-    fn draw_window(
-        mut wrapper_query: Query<&mut PixelsWrapper>,
-        world: Res<WorldMatrixResource>,
-        pixel_scaling: Res<PixelScalingResource>,
-    ) {
+    fn draw_window(mut wrapper_query: Query<&mut PixelsWrapper>, world: Res<WorldMatrixResource>, pixel_scaling: Res<PixelScalingResource>) {
         let pixel_scaling = pixel_scaling.pixel_scaling;
 
         //Bevy pixels stuff
@@ -64,7 +60,7 @@ impl WorldVisualizer {
             for j in 0..world.matrix.len() {
                 for x in 0..pixel_scaling {
                     for y in 0..pixel_scaling {
-                        let color = if x == pixel_scaling / 2 && y == pixel_scaling / 2 {
+                        let color = if x <= pixel_scaling / 2 && y <= pixel_scaling / 2 {
                             Self::color_tile_content(&world.matrix[i][j])
                                 .unwrap_or(Self::color_tile(&world.matrix[i][j]))
                         } else {
@@ -85,15 +81,21 @@ impl WorldVisualizer {
     ///
     /// - `world` - The world you want to render
     /// - `resolution` - The resolution of the output window
-    /// - `pixel_scaling` - Defines how many pixels should be used to display a single Tile.
     ///
     /// # Examples
     ///
     /// ```
+    /// # use robotics_lib::world::world_generator::Generator;
+    /// # use midgard::{ world_visualizer::*, world_generator::*};
+    /// # let mut world_generator = WorldGenerator::new(Default::default());
     /// let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
-    /// WorldVisualizer::visualize(world, 600, 2);
+    /// WorldVisualizer::visualize(world, 600);
     /// ```
-    pub fn visualize(world: Vec<Vec<Tile>>, resolution: usize, pixel_scaling: usize) {
+    pub fn visualize(world: Vec<Vec<Tile>>, resolution: usize) {
+        assert!(resolution >= world.len(), "WorldVisualizer::visualize must be called with resolution >= world_size ({resolution} < {})", world.len());
+
+        let pixel_scaling = resolution / world.len();
+
         let mut resolution = WindowResolution::new(resolution as f32, resolution as f32);
         resolution.set_scale_factor_override(Some(1.0));
 

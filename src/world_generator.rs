@@ -725,6 +725,8 @@ impl WorldGenerator {
 
 impl Generator for WorldGenerator {
     fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32, Option<HashMap<Content, f32>>) {
+        assert!(self.params.world_size > 2, "world size must be 3 or more");
+
         let mut profiler = PerformanceProfiler::new(SystemTime::now());
 
         println!("World seed: {}, size {}", self.params.seed, self.params.world_size);
