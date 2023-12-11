@@ -16,6 +16,27 @@ struct PixelScalingResource {
     pixel_scaling: usize,
 }
 
+/// Provides the `visualize` method to render the world
+///
+/// # Examples
+/// ```
+/// use midgard::world_generator::WorldGeneratorParameters;
+/// use robotics_lib::world::world_generator::Generator;
+/// use midgard::world_generator::WorldGenerator;
+/// 
+/// // Import the visualizer if you want to view a 2D render of your world
+/// use midgard::world_visualizer::WorldVisualizer;
+/// 
+/// fn main() {
+///     // Instantiate the World Generator with default parameters
+///     let mut world_generator = WorldGenerator::new(Default::default());
+///     let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
+///     
+///     // Use the 'visualize' method of 'WorldVisualizer' to render the generated world
+///     // the 2nd parameter is the window resolution and the 3rd is the scaling
+///     WorldVisualizer::visualize(world, 600, 2);
+/// }
+/// ```
 pub struct WorldVisualizer {}
 
 impl WorldVisualizer {
@@ -57,6 +78,21 @@ impl WorldVisualizer {
             }
         }
     }
+
+    /// This methods start the render of the world and displays the result in a window
+    ///
+    /// # Arguments
+    ///
+    /// - `world` - The world you want to render
+    /// - `resolution` - The resolution of the output window
+    /// - `pixel_scaling` - Defines how many pixels should be used to display a single Tile.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
+    /// WorldVisualizer::visualize(world, 600, 2);
+    /// ```
     pub fn visualize(world: Vec<Vec<Tile>>, resolution: usize, pixel_scaling: usize) {
         let mut resolution = WindowResolution::new(resolution as f32, resolution as f32);
         resolution.set_scale_factor_override(Some(1.0));
