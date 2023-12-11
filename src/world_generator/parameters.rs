@@ -5,18 +5,22 @@ use std::collections::HashMap;
 ///
 /// These parameters are used to personalize the world generation process, for example
 /// setting the world size or its scaling, disabling certain features, or
-/// changing the rarity of certain contents. for most use cases `WorldGeneratorParameters::default()`
+/// changing the rarity of certain contents. For most use cases `WorldGeneratorParameters::default()`
 /// should be ok, and it is recommended when setting parameters to start from a default instance.
 ///
 /// # Examples
 /// Users can simply use the default parameters:
 /// ```
+/// # use midgard::world_generator::*;
+/// # use robotics_lib::world::world_generator::Generator;
 /// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::default());
 /// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
 /// ```
 ///
 /// Or they can change them to their liking:
 /// ```
+/// # use midgard::world_generator::*;
+/// # use robotics_lib::world::world_generator::Generator;
 /// let params = WorldGeneratorParameters {
 ///     seed: 15, // fixed seed
 ///     world_size: 200, // smaller world
@@ -37,6 +41,9 @@ pub struct WorldGeneratorParameters {
 
     /// if true disables weather generation and the weather will always be sunny
     pub always_sunny: bool,
+
+    /// the number of days of weather that should be generated
+    pub weather_forecast_length: u64,
 
     /// the amount of minutes that pass for each tick
     pub time_progression_minutes: u8,
@@ -71,27 +78,33 @@ pub struct WorldGeneratorParameters {
     /// Controls the amount of each tile content to be spawned. See [ ContentsRadii ]
     pub contents_radii: ContentsRadii,
 }
-/// the default values are the following:
-/// ```
-/// seed: rand::random(),
-/// world_size: 300,
-/// always_sunny: false,
-/// time_progression_minutes: 10,
-/// starting_hour: 8,
-/// world_scale: 1.0,
-/// amount_of_rivers: Some(1.0),
-/// amount_of_streets: Some(1.0),
-/// amount_of_teleports: Some(1.0),
-/// score_table: None,
-/// max_score: 1000.0,
-/// contents_radii: ContentsRadii::default(),
-/// ```
+
 impl Default for WorldGeneratorParameters {
+    /// The default values are the following:
+    /// ```
+    /// # use midgard::world_generator::*;
+    /// # WorldGeneratorParameters {
+    /// seed: rand::random(),
+    /// world_size: 300,
+    /// always_sunny: false,
+    /// weather_forecast_length: 7,
+    /// time_progression_minutes: 10,
+    /// starting_hour: 8,
+    /// world_scale: 1.0,
+    /// amount_of_rivers: Some(1.0),
+    /// amount_of_streets: Some(1.0),
+    /// amount_of_teleports: Some(1.0),
+    /// score_table: None,
+    /// max_score: 1000.0,
+    /// contents_radii: ContentsRadii::default(),
+    /// # };
+    /// ```
     fn default() -> Self {
         Self {
             seed: rand::random(),
             world_size: 300,
             always_sunny: false,
+            weather_forecast_length: 7,
             time_progression_minutes: 10,
             starting_hour: 8,
             world_scale: 1.0,
@@ -112,9 +125,10 @@ impl Default for WorldGeneratorParameters {
 /// specific to a particular biome); for example if `trees_in_forest == 3` and `trees_in_hill == 4`
 /// that means that trees are more rare in hills than they are in forests.
 ///
-/// What the numbers actually represent are the radii (or radiuses) of the Poisson distributions used to generate
-/// the contents.
-///
+/// What the numbers actually represent are the radii (or radiuses) of the Poisson distributions
+/// used to generate the contents.
+/// For most use cases `ContentsRadii::default()` should be ok, and it is recommended when setting
+/// parameters to start from a default instance.
 ///
 /// ***Note**: the user may notice that changing some of these values can cause a performance hit;
 /// this is because the Poisson distributions used are cached to avoid generating the same more
@@ -137,23 +151,25 @@ pub struct ContentsRadii {
     pub markets: u64,
 }
 
-///the default values are the following:
-/// ```
-/// trees_in_forest: 3,
-/// trees_in_hill: 4,
-/// trees_in_mountain: 5,
-/// rocks_in_plains: 5,
-/// rocks_in_hill: 4,
-/// rocks_in_mountain: 3,
-/// fish_in_shallow_water: 5,
-/// fish_in_deep_water: 4,
-/// garbage: 10,
-/// coins: 20,
-/// garbage_bins: 20,
-/// crates: 40,
-/// markets: 50,
-/// ```
 impl Default for ContentsRadii {
+    /// The default values are the following:
+    /// ```
+    /// # midgard::world_generator::ContentsRadii {
+    /// trees_in_forest: 3,
+    /// trees_in_hill: 4,
+    /// trees_in_mountain: 5,
+    /// rocks_in_plains: 5,
+    /// rocks_in_hill: 4,
+    /// rocks_in_mountain: 3,
+    /// fish_in_shallow_water: 5,
+    /// fish_in_deep_water: 4,
+    /// garbage: 10,
+    /// coins: 20,
+    /// garbage_bins: 20,
+    /// crates: 40,
+    /// markets: 50,
+    /// # };
+    /// ```
     fn default() -> Self {
         Self {
             trees_in_forest: 3,
