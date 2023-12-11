@@ -1,20 +1,91 @@
 use robotics_lib::world::tile::Content;
 use std::collections::HashMap;
 
+/// Contains parameters passed to `world_generator::WorldGenerator` to tweak its behaviour
+///
+/// These parameters are used to personalize the world generation process, for example
+/// setting the world size or its scaling, disabling certain features, or
+/// changing the rarity of certain contents. for most use cases `WorldGeneratorParameters::default()`
+/// should be ok, and it is recommended when setting parameters to start from a default instance.
+///
+/// # Examples
+/// Users can simply use the default parameters:
+/// ```
+/// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::default());
+/// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
+/// ```
+///
+/// Or they can change them to their liking:
+/// ```
+/// let params = WorldGeneratorParameters {
+///     seed: 15, // fixed seed
+///     world_size: 200, // smaller world
+///     amount_of_rivers: None, // disable rivers
+///     amount_of_streets: Some(1.2), // more streets
+///
+///     ..Default::default() // get the rest of the parameters from the default
+/// };
+/// let mut world_generator = WorldGenerator::new(params);
+/// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
+/// ```
 pub struct WorldGeneratorParameters {
+    /// Seed used for world generation.
     pub seed: u64,
+
+    /// length of the side of the world, which is always a square
     pub world_size: usize,
+
+    /// if true disables weather generation and the weather will always be sunny
     pub always_sunny: bool,
+
+    /// the amount of minutes that pass for each tick
     pub time_progression_minutes: u8,
+
+    /// the starting hour, for example if `starting hour == 8` after generation the time will be 8:00 AM
     pub starting_hour: u8,
+
+    /// the scaling of the world. a smaller scale will result in smaller mountains, valleys and lakes,
+    /// and shorter distances between them
     pub world_scale: f64,
+
+
+    /// Controls the amount of rivers generated.
+    /// If set to `None` the river generation step will be skipped.
     pub amount_of_rivers: Option<f64>,
+
+    /// Controls the amount of streets generated.
+    /// If set to `None` the street generation step will be skipped.
     pub amount_of_streets: Option<f64>,
+
+    /// Controls the amount of teleports generated.
+    /// If set to `None` the teleport generation step will be skipped.
     pub amount_of_teleports: Option<f64>,
+
+    /// Sets a custom score table.
+    /// If set to `None` the default one provided by `robotics_lib` will be used.
     pub score_table: Option<HashMap<Content, f32>>,
+
+    /// sets the maximum score the robot can earn
     pub max_score: f32,
+
+    /// Controls the amount of each tile content to be spawned. See [ ContentsRadii ]
     pub contents_radii: ContentsRadii,
 }
+/// the default values are the following:
+/// ```
+/// seed: rand::random(),
+/// world_size: 300,
+/// always_sunny: false,
+/// time_progression_minutes: 10,
+/// starting_hour: 8,
+/// world_scale: 1.0,
+/// amount_of_rivers: Some(1.0),
+/// amount_of_streets: Some(1.0),
+/// amount_of_teleports: Some(1.0),
+/// score_table: None,
+/// max_score: 1000.0,
+/// contents_radii: ContentsRadii::default(),
+/// ```
 impl Default for WorldGeneratorParameters {
     fn default() -> Self {
         Self {
@@ -23,7 +94,7 @@ impl Default for WorldGeneratorParameters {
             always_sunny: false,
             time_progression_minutes: 10,
             starting_hour: 8,
-            world_scale: 180.0,
+            world_scale: 1.0,
             amount_of_rivers: Some(1.0),
             amount_of_streets: Some(1.0),
             amount_of_teleports: Some(1.0),
@@ -34,6 +105,22 @@ impl Default for WorldGeneratorParameters {
     }
 }
 
+
+/// Controls the amount of each tile content to be spawned.
+///
+/// The values in the struct can be thought of as the "rarity" of each tile content (sometimes
+/// specific to a particular biome); for example if `trees_in_forest == 3` and `trees_in_hill == 4`
+/// that means that trees are more rare in hills than they are in forests.
+///
+/// What the numbers actually represent are the radii (or radiuses) of the Poisson distributions used to generate
+/// the contents.
+///
+///
+/// ***Note**: the user may notice that changing some of these values can cause a performance hit;
+/// this is because the Poisson distributions used are cached to avoid generating the same more
+/// than once. Setting them to a value different from all others in the struct trades this
+/// performance benefit for some added customization. For small world sizes the performance hit
+/// should be minimal, and it is up to the user to decide what to prioritize.*
 pub struct ContentsRadii {
     pub trees_in_forest: u64,
     pub trees_in_hill: u64,
@@ -49,6 +136,23 @@ pub struct ContentsRadii {
     pub crates: u64,
     pub markets: u64,
 }
+
+///the default values are the following:
+/// ```
+/// trees_in_forest: 3,
+/// trees_in_hill: 4,
+/// trees_in_mountain: 5,
+/// rocks_in_plains: 5,
+/// rocks_in_hill: 4,
+/// rocks_in_mountain: 3,
+/// fish_in_shallow_water: 5,
+/// fish_in_deep_water: 4,
+/// garbage: 10,
+/// coins: 20,
+/// garbage_bins: 20,
+/// crates: 40,
+/// markets: 50,
+/// ```
 impl Default for ContentsRadii {
     fn default() -> Self {
         Self {
