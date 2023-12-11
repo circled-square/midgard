@@ -763,22 +763,12 @@ impl Generator for WorldGenerator {
         let environmental_conditions = call_with_seed!(self.generate_environmental_conditions());
         profiler.print_elapsed_time_in_ms("weather generation time");
 
-        let spawnpoint = call_with_seed!(self.generate_spawnpoint(&mut biomes_map));
-        println!("Spawnpoint {spawnpoint:?}");
-        profiler.print_elapsed_time_in_ms("spawnpoint generation time");
+        let spawn_point = call_with_seed!(self.generate_spawnpoint(&mut biomes_map));
+        println!("Spawn point {spawn_point:?}");
+        profiler.print_elapsed_time_in_ms("spawn point generation time");
 
         profiler.print_total_elapsed_time_in_ms("Total generation time");
 
-        /*
-        for x in 0..world.len() {
-            for y in 0..world.len() {
-                if x == spawnpoint.0 || y == spawnpoint.1 {
-                    world[x][y].tile_type = TileType::Lava;
-                }
-            }
-        }
-        */
-
-        (world, spawnpoint, environmental_conditions, self.params.max_score, self.params.score_table.clone())
+        (world, spawn_point, environmental_conditions, self.params.max_score, self.params.score_table.clone())
     }
 }
