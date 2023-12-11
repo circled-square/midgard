@@ -5,18 +5,22 @@ use std::collections::HashMap;
 ///
 /// These parameters are used to personalize the world generation process, for example
 /// setting the world size or its scaling, disabling certain features, or
-/// changing the rarity of certain contents. for most use cases `WorldGeneratorParameters::default()`
+/// changing the rarity of certain contents. For most use cases `WorldGeneratorParameters::default()`
 /// should be ok, and it is recommended when setting parameters to start from a default instance.
 ///
 /// # Examples
 /// Users can simply use the default parameters:
 /// ```
+/// # use midgard::world_generator::*;
+/// # use robotics_lib::world::world_generator::Generator;
 /// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::default());
 /// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
 /// ```
 ///
 /// Or they can change them to their liking:
 /// ```
+/// # use midgard::world_generator::*;
+/// # use robotics_lib::world::world_generator::Generator;
 /// let params = WorldGeneratorParameters {
 ///     seed: 15, // fixed seed
 ///     world_size: 200, // smaller world
@@ -75,8 +79,10 @@ pub struct WorldGeneratorParameters {
     pub contents_radii: ContentsRadii,
 }
 
-/// the default values are the following:
+/// The default values are the following:
 /// ```
+/// # use midgard::world_generator::*;
+/// # WorldGeneratorParameters {
 /// seed: rand::random(),
 /// world_size: 300,
 /// always_sunny: false,
@@ -90,6 +96,7 @@ pub struct WorldGeneratorParameters {
 /// score_table: None,
 /// max_score: 1000.0,
 /// contents_radii: ContentsRadii::default(),
+/// # };
 /// ```
 impl Default for WorldGeneratorParameters {
     fn default() -> Self {
@@ -118,9 +125,10 @@ impl Default for WorldGeneratorParameters {
 /// specific to a particular biome); for example if `trees_in_forest == 3` and `trees_in_hill == 4`
 /// that means that trees are more rare in hills than they are in forests.
 ///
-/// What the numbers actually represent are the radii (or radiuses) of the Poisson distributions used to generate
-/// the contents.
-///
+/// What the numbers actually represent are the radii (or radiuses) of the Poisson distributions
+/// used to generate the contents.
+/// For most use cases `ContentsRadii::default()` should be ok, and it is recommended when setting
+/// parameters to start from a default instance.
 ///
 /// ***Note**: the user may notice that changing some of these values can cause a performance hit;
 /// this is because the Poisson distributions used are cached to avoid generating the same more
@@ -143,8 +151,9 @@ pub struct ContentsRadii {
     pub markets: u64,
 }
 
-///the default values are the following:
+/// The default values are the following:
 /// ```
+/// # midgard::world_generator::ContentsRadii {
 /// trees_in_forest: 3,
 /// trees_in_hill: 4,
 /// trees_in_mountain: 5,
@@ -158,6 +167,7 @@ pub struct ContentsRadii {
 /// garbage_bins: 20,
 /// crates: 40,
 /// markets: 50,
+/// # };
 /// ```
 impl Default for ContentsRadii {
     fn default() -> Self {
