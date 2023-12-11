@@ -32,6 +32,8 @@ use std::collections::HashMap;
 /// let mut world_generator = WorldGenerator::new(params);
 /// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
 /// ```
+
+#[derive(Clone)]
 pub struct WorldGeneratorParameters {
     /// Seed used for world generation.
     pub seed: u64,
@@ -135,6 +137,8 @@ impl Default for WorldGeneratorParameters {
 /// than once. Setting them to a value different from all others in the struct trades this
 /// performance benefit for some added customization. For small world sizes the performance hit
 /// should be minimal, and it is up to the user to decide what to prioritize.*
+
+#[derive(Clone)]
 pub struct ContentsRadii {
     pub trees_in_forest: u64,
     pub trees_in_hill: u64,
@@ -164,7 +168,7 @@ impl Default for ContentsRadii {
     /// fish_in_shallow_water: 5,
     /// fish_in_deep_water: 4,
     /// garbage: 10,
-    /// coins: 20,
+    /// coins: 30,
     /// garbage_bins: 20,
     /// crates: 40,
     /// markets: 50,
@@ -181,7 +185,7 @@ impl Default for ContentsRadii {
             fish_in_shallow_water: 5,
             fish_in_deep_water: 4,
             garbage: 10,
-            coins: 20,
+            coins: 30,
             garbage_bins: 20,
             crates: 40,
             markets: 50,

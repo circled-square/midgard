@@ -67,8 +67,8 @@
 //! let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
 //! 
 //! // Use the 'visualize' method to render the generated world
-//! // the 2nd parameter is the window resolution and the 3rd is the scaling
-//! WorldVisualizer::visualize(world, 600, 2);
+//! // the parameter is the window resolution
+//! WorldVisualizer::visualize(world, 600);
 //! # }
 //! ```
 

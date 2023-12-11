@@ -5,6 +5,7 @@ use bevy::DefaultPlugins;
 use bevy_pixels::prelude::*;
 use bevy_pixels::{PixelsPlugin, PixelsWrapper};
 use robotics_lib::world::tile::{Content, Tile, TileType};
+use embed_doc_image::embed_doc_image;
 
 #[derive(Resource)]
 struct WorldMatrixResource {
@@ -16,9 +17,125 @@ struct PixelScalingResource {
     pixel_scaling: usize,
 }
 
+#[embed_doc_image("world_render", "misc/world_render.png")]
 /// Provides the `visualize` method to render the world
 /// 
-/// <img src="pic_trulli.jpg" alt="Italian Trulli">
+/// # Render example
+/// 
+/// ![World render image][world_render]
+/// 
+/// <style>
+/// .legend {
+///     font-family: Arial, sans-serif;
+///     padding: 10px;
+///     border: 1px solid #ccc;
+///     border-radius: 5px;
+/// }
+/// 
+/// .legend-item {
+///     display: flex;
+///     align-items: center;
+///     margin-bottom: 5px;
+/// }
+/// 
+/// .color-box {
+///     border-style: solid;
+///     border-width: 1px;
+///     border-color: white;
+///     box-shadow: 2px 2px 2px 0px #b3b3b3;
+///     width: 20px;
+///     height: 20px;
+///     margin-right: 10px;
+/// }
+/// </style>
+/// 
+/// # Legends
+/// 
+/// ## Tiles
+/// 
+/// <div class="legend">
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #000066;"></div>
+///         Deep Water
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #3333ff;"></div>
+///         Shallow Water
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #009933;"></div>
+///         Grass
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #ffcc00;"></div>
+///         Sand
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #cf1020;"></div>
+///         Lava
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #669900;"></div>
+///         Hill
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #996633;"></div>
+///         Mountain
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #ccffff;"></div>
+///         Snow
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #66ffff;"></div>
+///         Teleport
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #404040;"></div>
+///         Street
+///     </div>
+/// </div>
+/// 
+/// ## Contents
+/// 
+/// <div class="legend">
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #ff9933;"></div>
+///         Fish
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #336600;"></div>
+///         Tree
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #999966;"></div>
+///         Rock
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #ff6600;"></div>
+///         Fire
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #333300;"></div>
+///         Garbage
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #cc9900ff;"></div>
+///         Coin
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #ff6600;"></div>
+///         Bin
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #666633;"></div>
+///         Crate
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #cc00ff;"></div>
+///         Market
+///     </div>
+/// </div>
 /// 
 /// # Examples
 /// ```
@@ -35,7 +152,7 @@ struct PixelScalingResource {
 /// let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
 /// 
 /// // Use the 'visualize' method of 'WorldVisualizer' to render the generated world
-/// // the 2nd parameter is the window resolution and the 3rd is the scaling
+/// // th parameter is the window resolution
 /// WorldVisualizer::visualize(world, 600);
 /// # }
 /// ```
@@ -123,34 +240,37 @@ impl WorldVisualizer {
             .insert_resource(PixelScalingResource { pixel_scaling })
             .run();
     }
+
     fn color_tile_content(tile: &Tile) -> Option<[u8; 4]> {
-        return match tile.content {
-            //Content::Water(_) => Some([])
-            Content::Fish(_) => Some([255, 153, 102, 255]),
-            Content::Tree(_) => Some([51, 102, 0, 255]),
-            Content::Rock(_) => Some([128, 128, 128, 255]),
-            Content::Fire => Some([255, 102, 0, 255]),
-            Content::Garbage(_) => Some([102, 153, 153, 255]),
-            Content::Coin(_) => Some([204, 153, 0, 255]),
-            Content::Bin(_) => Some([255, 103, 0, 255]),
-            Content::Crate(_) => Some([102, 51, 0, 255]),
-            Content::Market(_) => Some([143, 51, 255, 255]),
-            _ => None,
+        let color: u32 = match tile.content {
+            // Content::Water(_) => Some()
+            Content::Fish(_) => 0xff9933ff,
+            Content::Tree(_) => 0x336600ff,
+            Content::Rock(_) => 0x999966ff,
+            Content::Fire => 0xff6600ff,
+            Content::Garbage(_) => 0x333300ff,
+            Content::Coin(_) => 0xcc9900ff,
+            Content::Bin(_) => 0xff6600ff,
+            Content::Crate(_) => 0x666633ff,
+            Content::Market(_) => 0xcc00ffff,
+            _ => return None,
         };
+        return Some((color as u32).to_be_bytes());
     }
     fn color_tile(tile: &Tile) -> [u8; 4] {
-        return match tile.tile_type {
-            TileType::DeepWater => [0, 0, 127, 255],
-            TileType::ShallowWater => [0, 0, 255, 255],
-            TileType::Grass => [0, 255, 0, 255],
-            TileType::Sand => [255, 255, 0, 255],
-            TileType::Lava => [255, 0, 0, 255],
-            TileType::Hill => [0, 127, 0, 255],
-            TileType::Mountain => [153, 102, 51, 255],
-            TileType::Snow => [255, 255, 255, 255],
-            TileType::Teleport(_) => [102, 255, 255, 255],
-            TileType::Street => [64, 64, 64, 255],
-            _ => [0, 0, 0, 255],
+        let color: u32 = match tile.tile_type {
+            TileType::DeepWater => 0x000066ff,
+            TileType::ShallowWater => 0x3333ffff,
+            TileType::Grass => 0x009933ff,
+            TileType::Sand => 0xffcc00ff,
+            TileType::Lava => 0xcf1020ff,
+            TileType::Hill => 0x669900ff,
+            TileType::Mountain => 0x996633ff,
+            TileType::Snow => 0xccffffff,
+            TileType::Teleport(_) => 0x66ffffff,
+            TileType::Street => 0x404040ff,
+            _ => 0x000000ff,
         };
+        return (color as u32).to_be_bytes();
     }
 }

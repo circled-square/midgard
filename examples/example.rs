@@ -10,5 +10,5 @@ fn main() {
     };
     let mut world_generator = WorldGenerator::new(params);
     let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
-    WorldVisualizer::visualize(world, 1000);
+    WorldVisualizer::visualize(world, 1200);
 }

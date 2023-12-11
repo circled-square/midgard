@@ -12,6 +12,10 @@ rand = "0.8.5"
 fast_poisson = "1.0.0"
 time = "0.3.30"
 num-traits = "0.2.17"
+embed-doc-image = "0.1.4"
 
 [[example]]
 name = "example"
+
+[[example]]
+name = "demo"
