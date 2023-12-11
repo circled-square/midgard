@@ -14,7 +14,7 @@ use std::collections::HashMap;
 /// # use midgard::world_generator::*;
 /// # use robotics_lib::world::world_generator::Generator;
 /// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::default());
-/// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
+/// let (world, spawn_point, weather, max_score, score_table) = world_generator.gen();
 /// ```
 ///
 /// Or they can change them to their liking:
@@ -26,11 +26,10 @@ use std::collections::HashMap;
 ///     world_size: 200, // smaller world
 ///     amount_of_rivers: None, // disable rivers
 ///     amount_of_streets: Some(1.2), // more streets
-///
-///     ..Default::default() // get the rest of the parameters from the default
+///     ..Default::default() // the rest of the parameters keep their default value
 /// };
 /// let mut world_generator = WorldGenerator::new(params);
-/// let (world, (spawn_x, spawn_y), weather, max_score, score_table) = world_generator.gen();
+/// let (world, spawn_point, weather, max_score, score_table) = world_generator.gen();
 /// ```
 pub struct WorldGeneratorParameters {
     /// Seed used for world generation.

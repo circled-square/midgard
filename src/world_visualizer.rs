@@ -23,17 +23,15 @@ struct PixelScalingResource {
 /// use midgard::world_generator::WorldGeneratorParameters;
 /// use robotics_lib::world::world_generator::Generator;
 /// use midgard::world_generator::WorldGenerator;
-/// 
-/// // Import the visualizer if you want to view a 2D render of your world
 /// use midgard::world_visualizer::WorldVisualizer;
 /// 
 /// fn main() {
-///     // Instantiate the World Generator with default parameters
+///     // Instantiate the WorldGenerator with default parameters
 ///     let mut world_generator = WorldGenerator::new(Default::default());
-///     let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
+///     let (world, _spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
 ///     
-///     // Use the 'visualize' method of 'WorldVisualizer' to render the generated world
-///     // the 2nd parameter is the window resolution and the 3rd is the scaling
+///     // Use the 'visualize' method to render the generated world
+///     // the 2nd parameter is the window resolution
 ///     WorldVisualizer::visualize(world, 600);
 /// }
 /// ```
@@ -75,20 +73,18 @@ impl WorldVisualizer {
         }
     }
 
-    /// This methods start the render of the world and displays the result in a window
+    /// This method creates a window and renders the world in it.
     ///
     /// # Arguments
-    ///
     /// - `world` - The world you want to render
     /// - `resolution` - The resolution of the output window
     ///
     /// # Examples
-    ///
     /// ```
     /// # use robotics_lib::world::world_generator::Generator;
     /// # use midgard::{ world_visualizer::*, world_generator::*};
     /// # let mut world_generator = WorldGenerator::new(Default::default());
-    /// let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
+    /// let (world, _spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
     /// WorldVisualizer::visualize(world, 600);
     /// ```
     pub fn visualize(world: Vec<Vec<Tile>>, resolution: usize) {

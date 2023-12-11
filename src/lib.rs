@@ -1,9 +1,7 @@
-//! World Generator
-//! 
-//! World Generation tool wich implements the `Generator trait` defined by `Robotic-Lib`
-//! 
+//! World Generation tool which implements the `Generator trait` defined by `Robotic-Lib`
+//!
 //! # Features
-//! 
+//!
 //! - Seed based generation.
 //!     - All random elements of the world generation follow the provided seed. This means that every world is 100% reproducible.
 //! - Elevation generation.
@@ -20,7 +18,7 @@
 //!         - Forest
 //!         - Hill
 //!         - Mountain
-//!         - SnowyMountain 
+//!         - SnowyMountain
 //! - Rivers generation
 //!     - Rivers generation is based on altitude. Rivers spawn in the mountains and follow the altitude to end in a lake or the sea.
 //! - Streets generation.
@@ -29,45 +27,44 @@
 //!     - Teleports spawn in random locations.
 //! - Content generation
 //!     - Each content has a different spawn probability and for some contents the probability also changes based on the biome.
-//!     - Contents:    
-//!         - `Trees` spawn in `Forest`, `Hill` and `Mountain`. Less trees spawn as the elevation increase
-//!         - `Rocks` spawn in `Plain`, `Hill`, `Mountain` and `SnowyMountain`. More rocks spawn as the elevation increase.
-//!         - `Fish` spawn in `ShallowWater` and `DeepWater`. More fish spawn as the water depth increase.
+//!     - Contents:
+//!         - `Tree` spawns in `Forest`, `Hill` and `Mountain`. Less trees spawn as the elevation increase
+//!         - `Rock` spawns in `Plain`, `Hill`, `Mountain` and `SnowyMountain`. More rocks spawn as the elevation increase.
+//!         - `Fish` spawns in `ShallowWater` and `DeepWater`. More fish spawn as the water depth increase.
 //!     - `Garbage`, `Coins`, `Bins`, `Crates`, `Markets` spawn randomly in the world with different probabilities
 //! - Weather forecast generation
 //!     - The weather forecast is generated choosing a random weather for each day.
 //!     - Weather types: `Sunny`, `Foggy`, `Rainy`, `TrentinoSnow`, `TropicalMonsoon`
 //!     - `always_sunny` is a parameter that allow to generate an always sunny weather.
 //! - Spawnpoint generation
-//!     - The spawn point is generated randomly but with biome preference to make the start easier. 
+//!     - The spawn point is generated randomly but with biome preference to make the start easier.
 //!     - In order of preference: `Plain`, `Beach`, `Forest`
-//! 
+//!
 //! # Examples
-//! 
+//!
 //! ```
-//! // Import the 'Generator' trait and  'WorldGeneratorParameters' to use the 'WorldGenerator'
-//! use midgard::world_generator::WorldGeneratorParameters;
 //! use robotics_lib::world::world_generator::Generator;
-//! // Import the "WorldGenerator"
 //! use midgard::world_generator::WorldGenerator;
-//! 
-//! // Import the visualizer if you want to view a 2D render of your world
+//! use midgard::world_generator::WorldGeneratorParameters;
 //! use midgard::world_visualizer::WorldVisualizer;
-//! 
+//!
 //! fn main() {
-//!     // Define the World Generator parameters using the dedicated struct
+//!     // Define the WorldGenerator parameters using the dedicated struct
 //!     let params = WorldGeneratorParameters {
-//!         world_size: 300,
-//!         ..Default::default()
+//!         seed: 15, // fixed seed
+//!         world_size: 200, // smaller world
+//!         amount_of_rivers: None, // disable rivers
+//!         amount_of_streets: Some(1.2), // more streets
+//!         ..Default::default() // the rest of the parameters keep their default value
 //!     };
-//! 
-//!     // Instantiate the World Generator with the static method 'new', passing the parameters
+//!
+//!     // Instantiate the WorldGenerator with the parameters
 //!     let mut world_generator = WorldGenerator::new(params);
-//!     let (world, (_spawn_x, _spawn_y), _weather, _max_score, _score_table) = world_generator.gen();
-//!     
-//!     // Use the 'visualize' method to render the generated world
-//!     // the 2nd parameter is the window resolution and the 3rd is the scaling
-//!     WorldVisualizer::visualize(world, 600, 2);
+//!     // Generate the world
+//!     let (world, _spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
+//!
+//!     // Use 'WorldVisualizer::visualize' to render the world at the specified resolution
+//!     WorldVisualizer::visualize(world, 600);
 //! }
 //! ```
 
