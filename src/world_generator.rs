@@ -14,7 +14,8 @@ use rand::rngs::StdRng;
 use rand::{distributions, Rng, SeedableRng};
 use robotics_lib::world::{environmental_conditions::{EnvironmentalConditions, WeatherType}, tile::Tile, tile::{Content, TileType}, world_generator::Generator};
 use std::collections::{HashMap, HashSet};
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 use std::time::SystemTime;
 use vector_math::*;
 
