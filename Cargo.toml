@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Enrico Dalla Croce (Kalsifer-742)", "Matteo Possami (circled-square)"]
 publish = ["kellnr"]
 description = "Highly configurable & blazing fast World Generator. Features include: biomes, world viewer, seed based reproducible randomness, rivers & streets. It allows users to tweak generation stages through simple parameters. Fully documented with rustdoc."
-readme = "readme.md"
+readme = "README.md"
 repository = "https://github.com/circled-square/midgard.git"
 
 [dependencies]
