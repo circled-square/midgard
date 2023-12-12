@@ -40,7 +40,7 @@
 //!     - The spawn point is generated randomly but with biome preference to make the start easier.
 //!     - In order of preference: `Plain`, `Beach`, `Forest`
 //!
-//! # Examples
+//! # Example
 //!
 //! ```
 //! use robotics_lib::world::world_generator::Generator;

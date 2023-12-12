@@ -4,7 +4,7 @@ use midgard::world_generator::WorldGenerator;
 use midgard::world_visualizer::WorldVisualizer;
 
 fn main() {
-    WorldVisualizer::visualize_with_realtime_edits(| | {
+    WorldVisualizer::visualize_realtime(| | {
         let params = WorldGeneratorParameters {
             world_size: 500,
             amount_of_streets: Some(0.7),

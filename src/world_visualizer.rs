@@ -61,7 +61,7 @@ struct TimeCounterResource {
 /// }
 /// </style>
 /// 
-/// # Legends
+/// # Legend
 /// 
 /// ## Tiles
 /// 
@@ -283,9 +283,9 @@ impl WorldVisualizer {
     }
 
 
-    pub fn visualize_with_realtime_edits(generator_function: fn() -> Vec<Vec<Tile>>, resolution: usize) {
+    pub fn visualize_realtime(generator_function: fn() -> Vec<Vec<Tile>>, resolution: usize) {
         let world = generator_function();
-        assert!(resolution >= world.len(), "WorldVisualizer::visualize must be called with resolution >= world_size ({resolution} < {})", world.len());
+        assert!(resolution >= world.len(), "WorldVisualizer::visualize_realtime must be called with resolution >= world_size ({resolution} < {})", world.len());
 
         let pixel_scaling = resolution / world.len();
 
