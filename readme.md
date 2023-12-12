@@ -11,47 +11,6 @@ Provides the `visualize` method to render the world
 
 ![](misc/legend.png)
 
-## Contents
-
-<div class="legend">
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #ff9933;"></div>
-        Fish
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #336600;"></div>
-        Tree
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #999966;"></div>
-        Rock
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #ff6600;"></div>
-        Fire
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #333300;"></div>
-        Garbage
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #cc9900ff;"></div>
-        Coin
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #ff6600;"></div>
-        Bin
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #666633;"></div>
-        Crate
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #cc00ff;"></div>
-        Market
-    </div>
-</div>
-
 ### Features:
 - Seed based generation.
     - All random elements of the world generation follow the provided seed and are independent of one another,
