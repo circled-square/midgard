@@ -20,6 +20,7 @@ use std::time::SystemTime;
 use vector_math::*;
 
 pub use parameters::*;
+use rayon::prelude::*;
 
 pub struct WorldGenerator {
     params: WorldGeneratorParameters,
@@ -93,22 +94,28 @@ impl WorldGenerator {
 
         let mut elevation_map = vec![vec![0.0; world_size]; world_size];
 
-        for x in 0..world_size {
-            for y in 0..world_size {
-                elevation_map[x][y] = noise_function.get([x as f64, y as f64]);
-            }
-        }
+        elevation_map
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(x, col)|{
+                for y in 0..world_size {
+                    col[y] = noise_function.get([x as f64, y as f64]);
+                }
+            });
 
         return elevation_map;
     }
 
     fn set_elevation_on_tiles(&self, world: &mut Vec<Vec<Tile>>, elevation_map: &Vec<Vec<f64>>) {
-        for x in 0..world.len() {
-            for y in 0..world.len() {
-                let elevation_normalized = (elevation_map[x][y].clamp(-1.0, 1.0) + 1.0) / 2.0;
-                world[x][y].elevation = (elevation_normalized * self.params.elevation_multiplier.unwrap()) as usize;
-            }
-        }
+           world
+                .par_iter_mut()
+                .enumerate()
+                .for_each(|(x, col)| {
+                    for y in 0..self.params.world_size {
+                        let elevation_normalized = (elevation_map[x][y].clamp(-1.0, 1.0) + 1.0) / 2.0;
+                        col[y].elevation = (elevation_normalized * self.params.elevation_multiplier.unwrap()) as usize;
+                    }
+                });
     }
 
     fn generate_temperature_map(&self, seed: u64) -> Vec<Vec<f64>> {
@@ -120,11 +127,14 @@ impl WorldGenerator {
             Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.56 * WORLD_SCALE_MULTIPLIER)),
         );
 
-        for x in 0..world_size {
-            for y in 0..world_size {
-                temperature_map[x][y] = noise_function.get([x as f64, y as f64]);
-            }
-        }
+       temperature_map
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(x, col)| {
+                for y in 0..world_size {
+                    col[y] = noise_function.get([x as f64, y as f64]);
+                }
+            });
 
         return temperature_map;
     }
