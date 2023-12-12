@@ -4,11 +4,11 @@ Midgard is a World Generation tool wich implements the `Generator trait` defined
 
 #### *Midgard is a magical world rich in treasures and dangers. Will your AI be able to navigate and conquer the magic lands of our world generator?*
 
-![](misc/world_render.png)
+![World render](misc/world_render.png)
 
 # Legend
 
-![](misc/legend.png)
+![Legend of the map](misc/legend.png)
 
 ### Features:
 * Seed based generation.
