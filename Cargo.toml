@@ -1,6 +1,6 @@
 [package]
 name = "midgard"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Enrico Dalla Croce (Kalsifer-742)", "Matteo Possami (circled-square)"]
 publish = ["kellnr"]
