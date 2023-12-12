@@ -51,7 +51,6 @@ Provides the `visualize` method to render the world
     - `Garbage`, `Coins`, `Bins`, `Crates`, `Markets` spawn randomly in the world with different probabilities
 - Weather forecast generation
     - The weather forecast is generated choosing a random weather for each day.
-    - Weather types: `Sunny`, `Foggy`, `Rainy`, `TrentinoSnow`, `TropicalMonsoon`
     - `always_sunny` is a parameter that allow to generate an always sunny weather.
 - Spawn point generation
     - The spawn point is guaranteed to be in a valid environment.
