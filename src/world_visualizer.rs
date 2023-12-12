@@ -313,7 +313,7 @@ impl WorldVisualizer {
             .insert_resource(TimeCounterResource { t: 0.0, last_t: 0.0 })
             .run();
     }
-    fn regen_world(mut world: ResMut<WorldMatrixResource>, gen_func: Res<RegenWorldFuncResource>,pixel_scaling: Res<PixelScalingResource>, time: Res<Time>, mut time_counter_resource: ResMut<TimeCounterResource>) {
+    fn regen_world(mut world: ResMut<WorldMatrixResource>, gen_func: Res<RegenWorldFuncResource>, time: Res<Time>, mut time_counter_resource: ResMut<TimeCounterResource>) {
         time_counter_resource.t += time.delta_seconds_f64();
         if time_counter_resource.t > time_counter_resource.last_t + 1.0 {
             world.matrix = (gen_func.deref().func)();
