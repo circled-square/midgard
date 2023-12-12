@@ -7,75 +7,9 @@ Midgard is a World Generation tool wich implements the `Generator trait` defined
 ![](misc/world_render.png)
 Provides the `visualize` method to render the world
 
-<style>
-.legend {
-    font-family: Arial, sans-serif;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 5px;
-}
-
-.color-box {
-    border-style: solid;
-    border-width: 1px;
-    border-color: white;
-    box-shadow: 2px 2px 2px 0px #b3b3b3;
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
-}
-</style>
-
 # Legend
-## Tiles
-<div class="legend">
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #000066;"></div>
-        Deep Water
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #3333ff;"></div>
-        Shallow Water
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #009933;"></div>
-        Grass
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #ffcc00;"></div>
-        Sand
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #cf1020;"></div>
-        Lava
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #669900;"></div>
-        Hill
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #996633;"></div>
-        Mountain
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #ccffff;"></div>
-        Snow
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #66ffff;"></div>
-        Teleport
-    </div>
-    <div class="legend-item">
-        <div class="color-box" style="background-color: #404040;"></div>
-        Street
-    </div>
-</div>
+
+![](misc/legend.png)
 
 ## Contents
 
