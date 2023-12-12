@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use bevy::app::{App, Update};
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
@@ -15,6 +16,17 @@ struct WorldMatrixResource {
 #[derive(Resource)]
 struct PixelScalingResource {
     pixel_scaling: usize,
+}
+
+#[derive(Resource)]
+struct RegenWorldFuncResource {
+    func : fn() -> Vec<Vec<Tile>>,
+}
+
+#[derive(Resource)]
+struct TimeCounterResource {
+    t : f64,
+    last_t : f64,
 }
 
 #[embed_doc_image("world_render", "misc/world_render.png")]
@@ -268,5 +280,44 @@ impl WorldVisualizer {
             _ => 0x000000ff,
         };
         return (color as u32).to_be_bytes();
+    }
+
+
+    pub fn visualize_with_realtime_edits(generator_function: fn() -> Vec<Vec<Tile>>, resolution: usize) {
+        let world = generator_function();
+        assert!(resolution >= world.len(), "WorldVisualizer::visualize must be called with resolution >= world_size ({resolution} < {})", world.len());
+
+        let pixel_scaling = resolution / world.len();
+
+        let mut resolution = WindowResolution::new(resolution as f32, resolution as f32);
+        resolution.set_scale_factor_override(Some(1.0));
+
+        let window_plugin = WindowPlugin {
+            primary_window: Some(Window {
+                title: "MIDGARD".into(),
+                resolution,
+                resizable: false,
+                ..default()
+            }),
+            ..default()
+        };
+
+        App::new()
+            .add_plugins((DefaultPlugins.set(window_plugin), PixelsPlugin::default()))
+            .add_systems(Update, bevy::window::close_on_esc)
+            .add_systems(Draw, Self::draw_window)
+            .add_systems(Update, Self::regen_world)
+            .insert_resource(WorldMatrixResource { matrix: world })
+            .insert_resource(PixelScalingResource { pixel_scaling })
+            .insert_resource(RegenWorldFuncResource { func: generator_function })
+            .insert_resource(TimeCounterResource { t: 0.0, last_t: 0.0 })
+            .run();
+    }
+    fn regen_world(mut world: ResMut<WorldMatrixResource>, gen_func: Res<RegenWorldFuncResource>,pixel_scaling: Res<PixelScalingResource>, time: Res<Time>, mut time_counter_resource: ResMut<TimeCounterResource>) {
+        time_counter_resource.t += time.delta_seconds_f64();
+        if time_counter_resource.t > time_counter_resource.last_t + 1.0 {
+            world.matrix = (gen_func.deref().func)();
+            time_counter_resource.last_t = time_counter_resource.t;
+        }
     }
 }
