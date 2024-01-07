@@ -115,3 +115,7 @@ fn main() {
   * Sets a custom score table. If set to None the default one provided by robotics_lib will be used.
 * `max_score: f32`
   * sets the maximum score the robot can earn
+
+# Documentation
+
+To get the full documentation run `cargo doc`
