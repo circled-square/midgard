@@ -195,20 +195,12 @@ impl WorldGenerator {
             Constant::new(1.5),
             Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.17 * WORLD_SCALE_MULTIPLIER)),
         );
-        let fire_noise_function = Multiply::new(
-            Constant::new(1.5),
-            Multi::new(Perlin::new(seed as u32 + 1), 7, 1.0 / (self.params.world_scale * 0.17 * WORLD_SCALE_MULTIPLIER)),
-        );
         let lava_noise = |x : usize, y : usize| lava_noise_function.get([x as f64, y as f64]);
-        let fire_noise = |x : usize, y : usize| fire_noise_function.get([x as f64, y as f64]);
 
         for (x, y) in biomes_map.get(&Biomes::Desert).unwrap() {
             if world[*x][*y].tile_type != TileType::ShallowWater {
                 if world[*x][*y].content != Content::Fire && lava_noise(*x,*y) < -0.6 {
                     world[*x][*y].tile_type = TileType::Lava;
-                }
-                if world[*x][*y].tile_type != TileType::Street && world[*x][*y].tile_type != TileType::Lava && fire_noise(*x,*y) < -0.5 {
-                    world[*x][*y].content = Content::Fire;
                 }
             }
         }
@@ -650,20 +642,18 @@ impl WorldGenerator {
         }
     }
 
-    fn generate_content(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, HashSet<(usize, usize)>>, coords: &Vec<[f64; 2]>, allowed_biomes: &Vec<Biomes>, tile_types_to_avoid: Option<&Vec<TileType>>, content: &Content) {
-        for coordinate in coords.iter() {
-            let (x, y) = (coordinate[0] as usize, coordinate[1] as usize);
+    fn generate_content(&self, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, HashSet<(usize, usize)>>, coords: &Vec<[f64; 2]>, allowed_biomes: &Vec<Biomes>, content: &Content) {
+        for coord in coords.iter() {
+            let (x, y) = (coord[0] as usize, coord[1] as usize);
+
             for biome in allowed_biomes {
-                if let Some(coords) = biomes_map.get(biome) {
-                    if coords.contains(&(x, y)) {
-                        match tile_types_to_avoid {
-                            Some(tiles) => {
-                                if tiles.iter().all(|t| *t != world[x][y].tile_type) {
-                                    world[x][y].content = content.clone();
-                                }
-                            }
-                            None => world[x][y].content = content.clone(),
-                        }
+                let Some(biome_coords) = biomes_map.get(biome) else {
+                    continue;
+                };
+
+                if biome_coords.contains(&(x, y)) {
+                    if world[x][y].tile_type.properties().can_hold(&content) {
+                        world[x][y].content = content.clone();
                     }
                 }
             }
@@ -678,7 +668,7 @@ impl WorldGenerator {
                 world[*x][*y].content = Content::Water(2);
             }
         }
-        if biomes_map.get(&Biomes::Deepwater).is_some() {
+        if biomes_map.get(&Biomes::ShallowWater).is_some() {
             for (x, y) in biomes_map.get(&Biomes::ShallowWater).unwrap() {
                 world[*x][*y].content = Content::Water(1);
             }
@@ -686,35 +676,36 @@ impl WorldGenerator {
 
         self.poisson.set_seed(seed);
 
-        let tile_types_to_avoid = vec![TileType::ShallowWater, TileType::DeepWater, TileType::Lava];
-        let tile_types_to_avoid_for_trees = vec![TileType::ShallowWater, TileType::DeepWater, TileType::Lava, TileType::Street];
         let allowed_biomes = vec![Biomes::Beach, Biomes::Desert, Biomes::Plain, Biomes::Forest, Biomes::Hill];
         let radii = &self.params.contents_radii;
         let configurations = vec![
-            (radii.trees_in_forest, vec![Biomes::Forest], Some(&tile_types_to_avoid_for_trees), Content::Tree(1)),
-            (radii.trees_in_hill, vec![Biomes::Hill], Some(&tile_types_to_avoid_for_trees), Content::Tree(1)),
-            (radii.trees_in_mountain, vec![Biomes::Mountain], Some(&tile_types_to_avoid_for_trees), Content::Tree(1)),
-            (radii.rocks_in_plains, vec![Biomes::Plain], Some(&tile_types_to_avoid), Content::Rock(1)),
-            (radii.rocks_in_hill, vec![Biomes::Hill], Some(&tile_types_to_avoid), Content::Rock(1)),
-            (radii.rocks_in_mountain, vec![Biomes::Mountain], Some(&tile_types_to_avoid), Content::Rock(1)),
-            (radii.rocks_in_mountain, vec![Biomes::SnowyMountain], Some(&tile_types_to_avoid), Content::Rock(1)),
-            (radii.fish_in_shallow_water, vec![Biomes::ShallowWater], None, Content::Fish(1)),
-            (radii.fish_in_deep_water, vec![Biomes::Deepwater], None, Content::Fish(1)),
-            (radii.garbage, allowed_biomes.clone(), Some(&tile_types_to_avoid), Content::Garbage(1)),
-            (radii.coins, allowed_biomes.clone(), Some(&tile_types_to_avoid), Content::Coin(1)),
-            (radii.garbage_bins, allowed_biomes.clone(), Some(&tile_types_to_avoid), Content::Bin(0..5)),
-            (radii.crates, allowed_biomes.clone(), Some(&tile_types_to_avoid), Content::Crate(0..5)),
-            (radii.markets, allowed_biomes.clone(), Some(&tile_types_to_avoid), Content::Market(1)),
+            (radii.trees_in_forest, vec![Biomes::Forest], Content::Tree(1)),
+            (radii.trees_in_hill, vec![Biomes::Hill], Content::Tree(1)),
+            (radii.trees_in_mountain, vec![Biomes::Mountain], Content::Tree(1)),
+
+            (radii.rocks_in_plains, vec![Biomes::Plain], Content::Rock(1)),
+            (radii.rocks_in_hill, vec![Biomes::Hill], Content::Rock(1)),
+            (radii.rocks_in_mountain, vec![Biomes::Mountain], Content::Rock(1)),
+            (radii.rocks_in_mountain, vec![Biomes::SnowyMountain], Content::Rock(1)),
+
+            (radii.fish_in_shallow_water, vec![Biomes::ShallowWater], Content::Fish(1)),
+            (radii.fish_in_deep_water, vec![Biomes::Deepwater], Content::Fish(1)),
+
+            (radii.garbage, allowed_biomes.clone(), Content::Garbage(1)),
+            (radii.coins, allowed_biomes.clone(), Content::Coin(1)),
+            (radii.garbage_bins, allowed_biomes.clone(), Content::Bin(0..5)),
+            (radii.crates, allowed_biomes.clone(), Content::Crate(0..5)),
+            (radii.markets, allowed_biomes.clone(), Content::Market(1)),
         ];
 
         let mut coords: HashMap<u64, Vec<[f64; 2]>> = HashMap::new();
-        for (radius, test_allowed_biomes, tile_types_to_avoid, content) in configurations {
+        for (radius, test_allowed_biomes, content) in configurations {
             if coords.get(&radius).is_none() {
                 self.poisson.set_dimensions([world_size as f64, world_size as f64], radius as f64);
                 coords.insert(radius, self.poisson.generate());
             }
 
-            self.generate_content(world, biomes_map, coords.get(&radius).unwrap(), &test_allowed_biomes, tile_types_to_avoid, &content);
+            self.generate_content(world, biomes_map, coords.get(&radius).unwrap(), &test_allowed_biomes, &content);
         }
     }
 
