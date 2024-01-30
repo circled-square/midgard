@@ -9,7 +9,7 @@ readme = "README.md"
 repository = "https://github.com/circled-square/midgard.git"
 
 [dependencies]
-robotics_lib = { version = "0.1.21", registry = "kellnr"}
+robotics_lib = { version = "0.1.22", path = "../Robotic-Lib" }
 bevy = { version = "0.12", default_features = false }
 bevy_pixels = "0.12"
 noise = "0.8.2"
