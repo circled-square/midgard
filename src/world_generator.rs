@@ -187,6 +187,7 @@ impl WorldGenerator {
     }
 
     fn generate_hellfire(&self, seed: u64, world: &mut Vec<Vec<Tile>>, biomes_map: &mut HashMap<Biomes, HashSet<(usize, usize)>>) {
+        // Lava
         if biomes_map.get(&Biomes::Desert).is_none() {
             return;
         }
@@ -198,10 +199,25 @@ impl WorldGenerator {
         let lava_noise = |x : usize, y : usize| lava_noise_function.get([x as f64, y as f64]);
 
         for (x, y) in biomes_map.get(&Biomes::Desert).unwrap() {
-            if world[*x][*y].tile_type != TileType::ShallowWater {
-                if world[*x][*y].content != Content::Fire && lava_noise(*x,*y) < -0.6 {
-                    world[*x][*y].tile_type = TileType::Lava;
-                }
+            if world[*x][*y].tile_type != TileType::ShallowWater && world[*x][*y].content != Content::Fire && lava_noise(*x,*y) < -0.6 {
+                world[*x][*y].tile_type = TileType::Lava;
+            }
+        }
+
+        // Fire
+        if biomes_map.get(&Biomes::Plain).is_none() {
+            return;
+        }
+
+        let fire_noise_function = Multiply::new(
+            Constant::new(1.5),
+            Multi::new(Perlin::new(seed as u32 + 1), 7, 1.0 / (self.params.world_scale * 0.17 * WORLD_SCALE_MULTIPLIER)),
+        );
+        let fire_noise = |x : usize, y : usize| fire_noise_function.get([x as f64, y as f64]);
+
+        for (x, y) in biomes_map.get(&Biomes::Plain).unwrap() {
+            if world[*x][*y].tile_type.properties().can_hold(&Content::Fire) && fire_noise(*x,*y) < -0.5 {
+                world[*x][*y].content = Content::Fire;
             }
         }
     }
@@ -688,6 +704,8 @@ impl WorldGenerator {
             (radii.rocks_in_mountain, vec![Biomes::Mountain], Content::Rock(1)),
             (radii.rocks_in_mountain, vec![Biomes::SnowyMountain], Content::Rock(1)),
 
+            (radii.bushes_in_plains, vec![Biomes::Plain], Content::Bush(1)),
+
             (radii.fish_in_shallow_water, vec![Biomes::ShallowWater], Content::Fish(1)),
             (radii.fish_in_deep_water, vec![Biomes::Deepwater], Content::Fish(1)),
 
@@ -696,6 +714,10 @@ impl WorldGenerator {
             (radii.garbage_bins, allowed_biomes.clone(), Content::Bin(0..5)),
             (radii.crates, allowed_biomes.clone(), Content::Crate(0..5)),
             (radii.markets, allowed_biomes.clone(), Content::Market(1)),
+            (radii.banks, allowed_biomes.clone(), Content::Bank(0..5)),
+            (radii.buildings, allowed_biomes.clone(), Content::Building),
+            (radii.scarecrows, allowed_biomes.clone(), Content::Scarecrow),
+            (radii.jolly_blocks, allowed_biomes.clone(), Content::JollyBlock(1)),
         ];
 
         let mut coords: HashMap<u64, Vec<[f64; 2]>> = HashMap::new();

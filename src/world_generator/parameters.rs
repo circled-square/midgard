@@ -150,6 +150,7 @@ pub struct ContentsRadii {
     pub rocks_in_plains: u64,
     pub rocks_in_hill: u64,
     pub rocks_in_mountain: u64,
+    pub bushes_in_plains: u64,
     pub fish_in_shallow_water: u64,
     pub fish_in_deep_water: u64,
     pub garbage: u64,
@@ -157,6 +158,10 @@ pub struct ContentsRadii {
     pub garbage_bins: u64,
     pub crates: u64,
     pub markets: u64,
+    pub banks: u64,
+    pub buildings: u64,
+    pub scarecrows: u64,
+    pub jolly_blocks: u64
 }
 
 impl Default for ContentsRadii {
@@ -169,6 +174,7 @@ impl Default for ContentsRadii {
     /// rocks_in_plains: 5,
     /// rocks_in_hill: 4,
     /// rocks_in_mountain: 3,
+    /// bushes_in_plains: 4,
     /// fish_in_shallow_water: 5,
     /// fish_in_deep_water: 4,
     /// garbage: 10,
@@ -176,6 +182,10 @@ impl Default for ContentsRadii {
     /// garbage_bins: 20,
     /// crates: 40,
     /// markets: 50,
+    /// banks: 50,
+    /// buildings: 50,
+    /// scarecrows: 30,
+    /// jolly_blocks: 50,
     /// # };
     /// ```
     fn default() -> Self {
@@ -186,6 +196,7 @@ impl Default for ContentsRadii {
             rocks_in_plains: 5,
             rocks_in_hill: 4,
             rocks_in_mountain: 3,
+            bushes_in_plains: 4,
             fish_in_shallow_water: 5,
             fish_in_deep_water: 4,
             garbage: 10,
@@ -193,6 +204,10 @@ impl Default for ContentsRadii {
             garbage_bins: 20,
             crates: 40,
             markets: 50,
+            banks: 50,
+            buildings: 50,
+            scarecrows: 30,
+            jolly_blocks: 50,
         }
     }
 }

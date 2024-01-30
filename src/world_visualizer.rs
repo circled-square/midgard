@@ -124,6 +124,10 @@ struct TimeCounterResource {
 ///         Rock
 ///     </div>
 ///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #000000;"></div>
+///         Bush (missing visualization)
+///     </div>
+///     <div class="legend-item">
 ///         <div class="color-box" style="background-color: #ff6600;"></div>
 ///         Fire
 ///     </div>
@@ -146,6 +150,22 @@ struct TimeCounterResource {
 ///     <div class="legend-item">
 ///         <div class="color-box" style="background-color: #cc00ff;"></div>
 ///         Market
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #000000;"></div>
+///         Bank (missing visualization)
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #000000;"></div>
+///         Building (missing visualization)
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #000000;"></div>
+///         Scarecrow (missing visualization)
+///     </div>
+///     <div class="legend-item">
+///         <div class="color-box" style="background-color: #000000;"></div>
+///         Jolly Block (missing visualization)
 ///     </div>
 /// </div>
 /// 
