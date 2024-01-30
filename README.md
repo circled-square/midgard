@@ -10,6 +10,8 @@ Midgard is a World Generation tool wich implements the `Generator trait` defined
 
 ![Legend of the map](misc/legend.png)
 
+> Contents missing from the visualizer: `Bush`, `Bank`, `Building`, `Scarecrow`, `Jolly Block`
+
 ### Features:
 * Seed based generation.
     * All random elements of the world generation follow the provided seed and are independent of one another,
@@ -28,9 +30,11 @@ Midgard is a World Generation tool wich implements the `Generator trait` defined
         * ShallowWater
         * Beach
         * Desert
-          * In deserts you can fine lava lakes and fire patches.
+          * In deserts you can find lava lakes.
         * Plain
+          * In plains you can find fire patches.
         * Forest
+          * In forests you can find fire patches.
         * Hill
         * Mountain
         * SnowyMountain
@@ -46,8 +50,9 @@ Midgard is a World Generation tool wich implements the `Generator trait` defined
     * Contents:
         * `Tree` spawns in `Forest`, `Hill` and `Mountain`. Fewer trees spawn as the elevation increase
         * `Rock` spawns in `Plain`, `Hill`, `Mountain` and `SnowyMountain`. More rocks spawn as the elevation increase.
+        * `Bush` spawns in `Plain`.
         * `Fish` spawns in `ShallowWater` and `DeepWater`. More fish spawn as the water depth increase.
-    * `Garbage`, `Coins`, `Bins`, `Crates`, `Markets` spawn randomly in the world with different probabilities
+    * `Garbage`, `Coins`, `Bins`, `Crates`, `Markets`, `Banks`, `Buildings`, `Scarecrows`, `JollyBlocks` spawn randomly in the world with different probabilities
 * Weather forecast generation
     * The weather forecast is generated choosing a random weather for each day.
     * `always_sunny` is a parameter that allow to generate an always sunny weather.

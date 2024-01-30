@@ -13,9 +13,11 @@
 //!         - ShallowWater
 //!         - Beach
 //!         - Desert
-//!           - In deserts you can fine lava lakes and fire patches.
+//!           - In deserts you can find lava lakes.
 //!         - Plain
+//!           - In plains you can find fire patches.
 //!         - Forest
+//!           - In forests you can find fire patches.
 //!         - Hill
 //!         - Mountain
 //!         - SnowyMountain
@@ -30,8 +32,9 @@
 //!     - Contents:
 //!         - `Tree` spawns in `Forest`, `Hill` and `Mountain`. Less trees spawn as the elevation increase
 //!         - `Rock` spawns in `Plain`, `Hill`, `Mountain` and `SnowyMountain`. More rocks spawn as the elevation increase.
+//!         - `Bush` spawns in `Plain`.
 //!         - `Fish` spawns in `ShallowWater` and `DeepWater`. More fish spawn as the water depth increase.
-//!     - `Garbage`, `Coins`, `Bins`, `Crates`, `Markets` spawn randomly in the world with different probabilities
+//!     - `Garbage`, `Coins`, `Bins`, `Crates`, `Markets`, `Banks`, `Buildings`, `Scarecrows`, `JollyBlocks` spawn randomly in the world with different probabilities
 //! - Weather forecast generation
 //!     - The weather forecast is generated choosing a random weather for each day.
 //!     - Weather types: `Sunny`, `Foggy`, `Rainy`, `TrentinoSnow`, `TropicalMonsoon`
