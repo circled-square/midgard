@@ -3,10 +3,10 @@ name = "midgard"
 version = "0.1.3"
 edition = "2021"
 authors = ["Enrico Dalla Croce (Kalsifer-742)", "Matteo Possami (circled-square)"]
-publish = ["kellnr"]
 description = "Highly configurable & blazing fast World Generator. Features include: biomes, world renderer, seed based reproducible randomness, rivers & streets. It allows users to tweak generation stages through simple parameters. Fully documented with rustdoc."
 readme = "README.md"
 repository = "https://github.com/circled-square/midgard.git"
+publish = ["kellnr"]
 
 [dependencies]
 robotics_lib = { version = "0.1.21", registry = "kellnr" }
@@ -26,7 +26,6 @@ opt-level = 3
 
 [profile.dev.package."robotics_lib"]
 opt-level = 0
-
 
 [[example]]
 name = "example"
