@@ -733,7 +733,7 @@ impl WorldGenerator {
 
     fn generate_spawnpoint(&mut self, seed: u64, biomes_map: &mut HashMap<Biomes, HashSet<(usize, usize)>>) -> (usize, usize) {
         self.poisson.set_seed(seed);
-        self.poisson.set_dimensions([self.params.world_size as f64, self.params.world_size as f64], 50.0);
+        self.poisson.set_dimensions([self.params.world_size as f64, self.params.world_size as f64], self.params.world_size as f64 / 10.0);
 
         let allowed_biomes = vec![Biomes::Plain, Biomes::Beach, Biomes::Forest];
         let mut spawnpoint = (0, 0);
