@@ -22,24 +22,6 @@ use vector_math::*;
 use params::*;
 use rayon::prelude::*;
 
-pub struct WorldGenerator {
-    params: WorldGeneratorParameters,
-    poisson: Poisson2D
-}
-
-#[derive(Eq, Hash, PartialEq, Debug, Clone)]
-enum Biomes {
-    Deepwater,
-    ShallowWater,
-    Beach,
-    Desert,
-    Plain,
-    Forest,
-    Hill,
-    Mountain,
-    SnowyMountain,
-}
-
 macro_rules! call_with_seed {
     ($this:ident . $fn_name:ident ($($arg:expr),*) ) => {{
         let mut hasher = DefaultHasher::new();
@@ -49,8 +31,10 @@ macro_rules! call_with_seed {
     }}
 }
 
-const WORLD_SCALE_MULTIPLIER : f64 = 180.0;
-
+pub struct WorldGenerator {
+    params: WorldGeneratorParameters,
+    poisson: Poisson2D
+}
 impl WorldGenerator {
     pub fn new(params: WorldGeneratorParameters) -> Self {
         let mut poisson = Poisson2D::new();
@@ -76,7 +60,7 @@ impl WorldGenerator {
 
                 assert_ne!(self.params.weather_forecast_length, 0, "weather_forecast_length must be > 0");
 
-                for _i in 0..self.params.weather_forecast_length {
+                for _ in 0..self.params.weather_forecast_length {
                     weather_forecast.push(weather_types[rng.gen_range(0..weather_types.len())]);
                 }
                 weather_forecast
@@ -107,15 +91,15 @@ impl WorldGenerator {
     }
 
     fn set_elevation_on_tiles(&self, world: &mut Vec<Vec<Tile>>, elevation_map: &Vec<Vec<f64>>) {
-           world
-                .par_iter_mut()
-                .enumerate()
-                .for_each(|(x, col)| {
-                    for y in 0..self.params.world_size {
-                        let elevation_normalized = (elevation_map[x][y].clamp(-1.0, 1.0) + 1.0) / 2.0;
-                        col[y].elevation = (elevation_normalized * self.params.elevation_multiplier.unwrap()) as usize;
-                    }
-                });
+        world
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(x, col)| {
+                for y in 0..self.params.world_size {
+                    let elevation_normalized = (elevation_map[x][y].clamp(-1.0, 1.0) + 1.0) / 2.0;
+                    col[y].elevation = (elevation_normalized * self.params.elevation_multiplier.unwrap()) as usize;
+                }
+            });
     }
 
     fn generate_temperature_map(&self, seed: u64) -> Vec<Vec<f64>> {
@@ -127,7 +111,7 @@ impl WorldGenerator {
             Multi::new(Perlin::new(seed as u32), 7, 1.0 / (self.params.world_scale * 0.56 * WORLD_SCALE_MULTIPLIER)),
         );
 
-       temperature_map
+        temperature_map
             .par_iter_mut()
             .enumerate()
             .for_each(|(x, col)| {
@@ -247,23 +231,23 @@ impl WorldGenerator {
         let mut poisson_coords_iterator = self.poisson.iter();
 
         for _ in 0..number_of_rivers {
+            //get a vector containing a river's tiles
             let river_tiles = loop {
                 let mut number_of_loops_looking_for_start_coord = 0; //safeguard against infinite looping while looking for a valid random start coordinates in worlds that lack it
+
+                //sample the poisson distribution for a start coordinate, and discard it if it is not
+                //Hill, Mountain or Snow or if it is close (within 3 tiles) to a ShallowWater tile
                 let start_coords = loop {
                     let coords = poisson_coords_iterator
                         .next()
                         .map(|p| ((p[0] * world_size as f64) as isize, (p[1] * world_size as f64) as isize))
-                        .unwrap_or_else(|| { (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution))});
+                        .unwrap_or_else(|| { (rng.sample(world_pos_distribution), rng.sample(world_pos_distribution)) });
 
                     if [TileType::Hill, TileType::Mountain, TileType::Snow].contains(&world.at(coords).tile_type) {
                         let mut should_discard = false;
                         'outer: for x in -3..3 {
                             for y in -3..3 {
-                                if let Some(Tile {
-                                    tile_type: TileType::ShallowWater,
-                                    ..
-                                }) = world.at_checked((coords.0 + x, coords.1 + y))
-                                {
+                                if let Some(Tile { tile_type: TileType::ShallowWater,..}) = world.at_checked((coords.0 + x, coords.1 + y)) {
                                     should_discard = true;
                                     break 'outer;
                                 }
@@ -283,30 +267,32 @@ impl WorldGenerator {
 
                 let mut river_tiles_stack = vec![start_coords];
                 let mut avoid_tiles = HashSet::from([start_coords]);
-                let mut river_tiles_set = HashSet::from([start_coords]);
+                let mut river_tiles_set = HashSet::from([start_coords]); // always contains the same as river_tiles_stack
                 let mut inertia = (0.0, 0.0);
                 let mut movement_debt = (0.0, 0.0);
 
+                // build river_tiles_stack with tiles based on the inertia of the river, backtracking
+                // when there is no valid direction that hasn't been visited or when
                 loop {
                     if river_tiles_stack.is_empty() {
                         break;
                     }
                     let coords = *river_tiles_stack.last().unwrap();
 
-                    // backtrack to prev tile if the current is close to lava or close to a tile in avoid tiles
+                    // backtrack to a prev tile if the current is close to lava or close to a tile in river_tiles_set (but has not been added recently)
                     {
                         let mut should_backtrack = false;
+                        let recent_tiles_size = river_tiles_stack.len().min(7);
+                        let recent_tiles = &river_tiles_stack[river_tiles_stack.len() - recent_tiles_size..];
                         'outer: for x in -3..=3 {
                             for y in -3..=3 {
                                 let c = (coords.0 + x, coords.1 + y);
-                                let last_tiles_size = river_tiles_stack.len().min(7);
-                                let last_tiles =
-                                    &river_tiles_stack[river_tiles_stack.len() - last_tiles_size..];
-                                if river_tiles_set.contains(&c) && !last_tiles.contains(&c) {
+
+                                if river_tiles_set.contains(&c) && !recent_tiles.contains(&c) {
                                     should_backtrack = true;
                                     break 'outer;
                                 }
-                                if let Some(Tile {tile_type: TileType::Lava, ..}) = world.at_checked(c) {
+                                if let Some(Tile { tile_type: TileType::Lava, .. }) = world.at_checked(c) {
                                     should_backtrack = true;
                                     break 'outer;
                                 }
@@ -319,6 +305,8 @@ impl WorldGenerator {
                         }
                     }
 
+                    // when the river is close to the edge of the world randomly decide if it should
+                    // flow off of it or if it should backtrack
                     if [0, world.len() as isize - 1].contains(&coords.0) || [0, world.len() as isize - 1].contains(&coords.1) {
                         match rng.sample(float_distribution) {
                             n if n < 0.5 => {
@@ -332,10 +320,12 @@ impl WorldGenerator {
                         }
                     }
 
+                    // stop if river flowed into another river or into a lake
                     if [TileType::ShallowWater, TileType::DeepWater].contains(&world.at(coords).tile_type) {
-                        break; // flow into another river or into a lake
+                        break;
                     }
 
+                    // candidates contains the possible future tiles for the river to flow in
                     let candidates: Vec<_> = directions
                         .iter()
                         .filter_map(|(x, y)| {
@@ -351,13 +341,18 @@ impl WorldGenerator {
                         })
                         .collect();
 
+                    // backtrack if candidates is empty (nowhere to flow to)
                     if candidates.len() == 0 {
-                        avoid_tiles.insert(coords);
                         let tile = river_tiles_stack.pop().unwrap();
                         river_tiles_set.remove(&tile);
                         continue;
                     }
 
+
+                    //calculate a theoretical direction of movement based on a weighed sum of:
+                    // - gradient of elevation,
+                    // - inertia
+                    // - random jitter
                     let gradient_of_elevation = get_gradient(elevation, coords).unwrap();
                     let direction = vec_normalize(vec_sum(
                         vec_sum(
@@ -372,14 +367,17 @@ impl WorldGenerator {
                             random_jitter,
                         ),
                     ));
+                    //update inertia based on movement
                     inertia = vec_clamp(
                         vec_sum(vec_mul_by_scalar(inertia, inertia_decay), direction),
                         max_inertia,
                     );
 
+                    //update movement_debt
                     movement_debt = vec_clamp(movement_debt, 1.0);
-                    movement_debt.0 += direction.0;
-                    movement_debt.1 += direction.1;
+                    movement_debt = vec_sum(movement_debt, direction);
+
+                    // actually compute movement
                     let move_along_x_axis = movement_debt.0.abs() > movement_debt.1.abs();
 
                     let x_candidate_dir = if direction.0 > 0.0 { 1 } else { -1 };
@@ -399,7 +397,8 @@ impl WorldGenerator {
                         } else {
                             (-x_candidate_dir, 0)
                         }
-                    } else {
+                    }
+                    else {
                         if candidates.contains(&y_candidate) {
                             (0, y_candidate_dir)
                         } else if candidates.contains(&x_candidate) {
@@ -411,8 +410,8 @@ impl WorldGenerator {
                         }
                     };
 
-                    movement_debt.0 -= target_dir.0 as f64;
-                    movement_debt.1 -= target_dir.1 as f64;
+                    // update movement_debt removing from the debt the movement that actually happened
+                    movement_debt = vec_subtract(movement_debt, (target_dir.0 as f64, target_dir.1 as f64));
 
                     let target_tile = (coords.0 + target_dir.0, coords.1 + target_dir.1);
 
@@ -473,6 +472,7 @@ impl WorldGenerator {
 
             let desired_direction = vec_normalize(dist_to_poi2);
 
+            // use dot product to find which perpendicular to the gradient is more concordant with the desired direction
             let perpendicular_to_gradient_of_elevation_concordant_to_desired_direction = {
                 let desired_direction_dot_perpendiculars_to_gradient_of_elevation =
                     perpendiculars_to_gradient_of_elevation.map(|p| vec_dot(p, desired_direction));
@@ -487,11 +487,15 @@ impl WorldGenerator {
                 perpendiculars_to_gradient_of_elevation[max]
             };
 
+            // when the dist to poi2 is smaller than dist(poi1, poi2)/2
+            // we will start giving more weight to desired_direction and less to inertia.
             let proximity_threshold =
                 (((poi1.0 - poi2.0).pow(2) + (poi1.1 - poi2.1).pow(2)) as f64).sqrt() / 2.0;
             let proximity_multiplier =
                 f64::max(1.0, proximity_threshold / vec_module(dist_to_poi2));
 
+            // movement direction will be a weighed sum of desired_direction, inertia and
+            // perpendicular_to_gradient_of_elevation_concordant_to_desired_direction
             let direction = vec_sum(
                 vec_sum(
                     vec_mul_by_scalar(desired_direction, proximity_multiplier),
@@ -504,9 +508,11 @@ impl WorldGenerator {
             );
             let direction = vec_normalize(direction);
 
+            //update movement_debt
             movement_debt = vec_clamp(movement_debt, 5.0);
-            movement_debt.0 += direction.0;
-            movement_debt.1 += direction.1;
+            movement_debt = vec_sum(movement_debt, direction);
+
+            //actually compute movement
             let move_along_x_axis = movement_debt.0.abs() > movement_debt.1.abs();
 
             let x_candidate_dir = if direction.0 > 0.0 { 1 } else { -1 };
@@ -518,10 +524,10 @@ impl WorldGenerator {
                 (0, y_candidate_dir)
             };
 
-            movement_debt.0 -= target_dir.0 as f64;
-            movement_debt.1 -= target_dir.1 as f64;
+            //update movement_debt subtracting the movement
+            movement_debt = vec_subtract(movement_debt, (target_dir.0 as f64, target_dir.1 as f64));
 
-            *inertia = (inertia.0 + direction.0, inertia.1 + direction.1);
+            *inertia = vec_sum(*inertia, direction);
             *inertia = vec_mul_by_scalar(*inertia, inertia_decay);
             *inertia = vec_clamp(*inertia, max_inertia);
 
@@ -532,6 +538,7 @@ impl WorldGenerator {
             street_tiles_set.insert(target_tile);
         }
 
+        //fill tiles in street_tiles_stack with Street (if they aren't water or lava)
         for pos in street_tiles_stack {
             if let Some(tile) = world.at_mut_checked(pos) {
                 if ![TileType::Lava, TileType::DeepWater, TileType::ShallowWater]
@@ -552,6 +559,7 @@ impl WorldGenerator {
         let poi_distance = 50.0 / amount;
         let mut rng = StdRng::seed_from_u64(seed);
 
+        //generate random Points Of Interest on the map to connect with streets
         self.poisson.set_seed(seed);
         self.poisson.set_dimensions([1.0, 1.0],poi_distance / (1.5 * world.len() as f64));
         let poi_vec: Vec<_> = self.poisson
@@ -560,18 +568,17 @@ impl WorldGenerator {
             .map(|[x, y]| (x, y))
             .collect();
         if poi_vec.is_empty() {
-            eprintln!("road gen: poi vec was empty");
             return;
         }
-
         let random_poi_distribution = distributions::Uniform::new(0, poi_vec.len());
 
+        // for any 2 POIs A, B that are connected by a street street_map will contain (A,B) and (B,A)
         let mut street_map = HashSet::new();
         let number_of_streets = (world.len() as f64 / poi_distance).pow(2.0) as usize * 2;
-        let mut number_of_empty_streets_produced = 0; // stop after number_of_streets empty streets have been produced
+        let mut number_of_empty_streets_produced = 0; // stop after number_of_streets empty streets have been produced (empty street = street generation failure)
 
         while street_map.len() < number_of_streets * 2 {
-            // generate a street
+            // generate a street (a vec of POIs)
             let start_poi = rng.sample(random_poi_distribution);
             let number_of_pois_in_street = world.len() / poi_distance as usize;
             let mut street = vec![start_poi];
@@ -615,6 +622,7 @@ impl WorldGenerator {
                 }
             }
 
+            //actually build the street and populate the tiles
             let mut inertia = (0.0, 0.0);
             for i in 0..street.len() - 1 {
                 let poi1 = poi_vec[street[i]];
@@ -755,6 +763,7 @@ impl WorldGenerator {
     }
 }
 
+
 impl Generator for WorldGenerator {
     fn gen(&mut self) -> (Vec<Vec<Tile>>, (usize, usize), EnvironmentalConditions, f32, Option<HashMap<Content, f32>>) {
         assert!(self.params.world_size > 2, "world size must be 3 or more");
@@ -809,3 +818,20 @@ impl Generator for WorldGenerator {
         (world, spawn_point, environmental_conditions, self.params.max_score, self.params.score_table.clone())
     }
 }
+
+#[derive(Eq, Hash, PartialEq, Debug, Clone)]
+enum Biomes {
+    Deepwater,
+    ShallowWater,
+    Beach,
+    Desert,
+    Plain,
+    Forest,
+    Hill,
+    Mountain,
+    SnowyMountain,
+}
+
+
+const WORLD_SCALE_MULTIPLIER : f64 = 180.0;
+
