@@ -173,12 +173,12 @@ struct TimeCounterResource {
 /// 
 /// ```
 /// use robotics_lib::world::world_generator::Generator;
-/// use midgard::world_generator::WorldGenerator;
-/// use midgard::world_generator::WorldGeneratorParameters;
-/// use midgard::world_visualizer::WorldVisualizer;
+/// use midgard::WorldGenerator;
+/// use midgard::params::WorldGeneratorParameters;
+/// use midgard::WorldVisualizer;
 ///
 /// # fn main() {
-/// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::Default());
+/// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::default());
 /// // Generate the world
 /// let (world, _spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
 ///
@@ -233,7 +233,7 @@ impl WorldVisualizer {
     /// # Examples
     /// ```
     /// # use robotics_lib::world::world_generator::Generator;
-    /// # use midgard::{ world_visualizer::*, world_generator::*};
+    /// # use midgard::{ *, params::*};
     /// # let mut world_generator = WorldGenerator::new(Default::default());
     /// let (world, _spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
     /// WorldVisualizer::visualize(world, 600);

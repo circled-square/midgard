@@ -1,11 +1,14 @@
 use crate::world_generator::isize_index_matrix::IsizeIndexMatrix;
-use bevy::utils::petgraph::matrix_graph::Zero;
+use num_traits::Zero;
 
 pub fn vec_mul_by_scalar(v: (f64, f64), s: f64) -> (f64, f64) {
     (v.0 * s, v.1 * s)
 }
 pub fn vec_sum(v: (f64, f64), u: (f64, f64)) -> (f64, f64) {
     (v.0 + u.0, v.1 + u.1)
+}
+pub fn vec_subtract(v: (f64, f64), u: (f64, f64)) -> (f64, f64){
+    (v.0 - u.0, v.1 - u.1)
 }
 pub fn vec_dot(v: (f64, f64), u: (f64, f64)) -> f64 {
     v.0 * u.0 + v.1 + u.1

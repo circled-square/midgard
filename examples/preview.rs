@@ -1,7 +1,7 @@
-use midgard::world_generator::WorldGeneratorParameters;
+use midgard::params::WorldGeneratorParameters;
 use robotics_lib::world::world_generator::Generator;
-use midgard::world_generator::WorldGenerator;
-use midgard::world_visualizer::WorldVisualizer;
+use midgard::WorldGenerator;
+use midgard::WorldVisualizer;
 
 fn main() {
     WorldVisualizer::visualize_realtime(| | {

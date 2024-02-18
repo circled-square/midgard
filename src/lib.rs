@@ -47,9 +47,10 @@
 //!
 //! ```
 //! use robotics_lib::world::world_generator::Generator;
-//! use midgard::world_generator::WorldGenerator;
-//! use midgard::world_generator::WorldGeneratorParameters;
-//! use midgard::world_visualizer::WorldVisualizer;
+//! use midgard::WorldGenerator;
+//! use midgard::params::WorldGeneratorParameters;
+//!# #[cfg(feature = "visualizer")]
+//! use midgard::WorldVisualizer;
 //!
 //! fn main() {
 //!     // Define the WorldGenerator parameters using the dedicated struct
@@ -67,12 +68,22 @@
 //!     let (world, _spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
 //!
 //!     // Use 'WorldVisualizer::visualize' to render the world at the specified resolution
+//!     // (only available with feature "visualizer" enabled)
+//!#    #[cfg(feature = "visualizer")]
 //!     WorldVisualizer::visualize(world, 600);
 //! }
 //! ```
 
-/// World Generator
-pub mod world_generator;
+mod world_generator;
 
+
+#[cfg(feature = "visualizer")]
+mod world_visualizer;
+
+/// World Generator
+pub use world_generator::WorldGenerator;
+/// Parameters for WorldGenerator
+pub use world_generator::params;
 /// A simple 2D visualizer to render the generated world
-pub mod world_visualizer;
+#[cfg(feature = "visualizer")]
+pub use world_visualizer::WorldVisualizer;

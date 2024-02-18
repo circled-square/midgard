@@ -11,7 +11,7 @@ use std::collections::HashMap;
 /// # Examples
 /// Users can simply use the default parameters:
 /// ```
-/// # use midgard::world_generator::*;
+/// # use midgard::{*, params::*};
 /// # use robotics_lib::world::world_generator::Generator;
 /// let mut world_generator = WorldGenerator::new(WorldGeneratorParameters::default());
 /// let (world, spawn_point, weather, max_score, score_table) = world_generator.gen();
@@ -19,7 +19,7 @@ use std::collections::HashMap;
 ///
 /// Or they can change them to their liking:
 /// ```
-/// # use midgard::world_generator::*;
+/// # use midgard::{*, params::*};
 /// # use robotics_lib::world::world_generator::Generator;
 /// let params = WorldGeneratorParameters {
 ///     seed: 15, // fixed seed
@@ -86,7 +86,7 @@ pub struct WorldGeneratorParameters {
 impl Default for WorldGeneratorParameters {
     /// The default values are the following:
     /// ```
-    /// # use midgard::world_generator::*;
+    /// # use midgard::{*, params::*};
     /// # WorldGeneratorParameters {
     /// seed: rand::random(),
     /// world_size: 300,
@@ -167,7 +167,7 @@ pub struct ContentsRadii {
 impl Default for ContentsRadii {
     /// The default values are the following:
     /// ```
-    /// # midgard::world_generator::ContentsRadii {
+    /// # midgard::params::ContentsRadii {
     /// trees_in_forest: 3,
     /// trees_in_hill: 4,
     /// trees_in_mountain: 5,

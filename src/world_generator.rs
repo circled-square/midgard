@@ -1,6 +1,6 @@
 mod isize_index_matrix;
 mod multi_octave_noise;
-mod parameters;
+pub mod params;
 mod performance_profiler;
 mod vector_math;
 
@@ -19,7 +19,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::time::SystemTime;
 use vector_math::*;
 
-pub use parameters::*;
+use params::*;
 use rayon::prelude::*;
 
 pub struct WorldGenerator {
