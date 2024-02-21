@@ -31,6 +31,21 @@ macro_rules! call_with_seed {
     }}
 }
 
+#[derive(Eq, Hash, PartialEq, Debug, Clone)]
+enum Biomes {
+    Deepwater,
+    ShallowWater,
+    Beach,
+    Desert,
+    Plain,
+    Forest,
+    Hill,
+    Mountain,
+    SnowyMountain,
+}
+
+const WORLD_SCALE_MULTIPLIER : f64 = 180.0;
+
 pub struct WorldGenerator {
     params: WorldGeneratorParameters,
     poisson: Poisson2D
@@ -729,13 +744,13 @@ impl WorldGenerator {
         ];
 
         let mut coords: HashMap<u64, Vec<[f64; 2]>> = HashMap::new();
-        for (radius, test_allowed_biomes, content) in configurations {
+        for (radius, allowed_biomes, content) in configurations {
             if coords.get(&radius).is_none() {
                 self.poisson.set_dimensions([world_size as f64, world_size as f64], radius as f64);
                 coords.insert(radius, self.poisson.generate());
             }
 
-            self.generate_content(world, biomes_map, coords.get(&radius).unwrap(), &test_allowed_biomes, &content);
+            self.generate_content(world, biomes_map, coords.get(&radius).unwrap(), &allowed_biomes, &content);
         }
     }
 
@@ -818,20 +833,3 @@ impl Generator for WorldGenerator {
         (world, spawn_point, environmental_conditions, self.params.max_score, self.params.score_table.clone())
     }
 }
-
-#[derive(Eq, Hash, PartialEq, Debug, Clone)]
-enum Biomes {
-    Deepwater,
-    ShallowWater,
-    Beach,
-    Desert,
-    Plain,
-    Forest,
-    Hill,
-    Mountain,
-    SnowyMountain,
-}
-
-
-const WORLD_SCALE_MULTIPLIER : f64 = 180.0;
-
